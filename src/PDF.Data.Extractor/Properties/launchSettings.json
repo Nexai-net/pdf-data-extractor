@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "Touring Sample": {
+      "commandName": "Project",
+      "commandLineArgs": "-s \"C:\\Users\\Mickaelthumerel\\source\\repos\\github\\pdf-data-extractor\\data\\issueTOURING_276_FR.pdf\" -o \"output\""
+    }
+  }
+}
