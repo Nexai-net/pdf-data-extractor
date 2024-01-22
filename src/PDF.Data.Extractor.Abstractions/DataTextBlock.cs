@@ -7,11 +7,14 @@ namespace PDF.Data.Extractor.Abstractions
     using PDF.Data.Extractor.Abstractions.Tags;
 
     using System.Collections.Generic;
-    using System.Text.Json.Serialization;
+    using System.Diagnostics;
+    using System.Runtime.Serialization;
 
     /// <summary>
     /// Represent a data block containing text information
     /// </summary>
+    [DataContract]
+    [DebuggerDisplay("{Text}")]
     public sealed class DataTextBlock : DataBlock
     {
         #region Ctor
@@ -22,17 +25,27 @@ namespace PDF.Data.Extractor.Abstractions
         public DataTextBlock(Guid uid,
                              string? actualText,
                              float fontLevel,
+                             float pointValue,
+                             float ligneSize,
                              float scale,
                              string text,
+                             Guid fontInfoUid,
+                             float spaceWidth,
                              BlockArea area,
+                             float textBoxId,
                              IEnumerable<DataTag> tags,
-                             IEnumerable<DataTextBlock>? children) 
+                             IEnumerable<DataBlock>? children) 
             : base(uid, BlockTypeEnum.Text, area, tags, children)
         {
             this.ActualText = actualText;
+            this.LineSize = ligneSize;
             this.FontLevel = fontLevel;
+            this.PointValue = pointValue;
             this.Scale = scale;
             this.Text = text;
+            this.FontInfoUid = fontInfoUid;
+            this.SpaceWidth = spaceWidth;
+            this.TextBoxId = textBoxId;
         }
 
         #endregion
@@ -42,22 +55,55 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Gets the actual text.
         /// </summary>
+        [DataMember]
         public string? ActualText { get; }
+
+        /// <summary>
+        /// Gets the size of the ligne.
+        /// </summary>
+        [DataMember]
+        public float LineSize { get; }
 
         /// <summary>
         /// Gets a font level value used to identify the font size requested.
         /// </summary>
+        [DataMember]
         public float FontLevel { get; }
+
+        /// <summary>
+        /// Gets the point value pixel of a point in during extraction.
+        /// </summary>
+        [DataMember]
+        public float PointValue { get; }
 
         /// <summary>
         /// Gets the scale from 0 to 1 in percent.
         /// </summary>
+        [DataMember]
         public float Scale { get; }
 
         /// <summary>
         /// Gets the text.
         /// </summary>
+        [DataMember]
         public string Text { get; }
+
+        /// <summary>
+        /// Gets the font information uid.
+        /// </summary>
+        [DataMember]
+        public Guid FontInfoUid { get; }
+
+        /// <summary>
+        /// Gets the inter ligne space.
+        /// </summary>
+        [DataMember]
+        public float SpaceWidth { get; }
+
+        /// <summary>
+        /// Gets the text box identifier.
+        /// </summary>
+        public float TextBoxId { get; }
 
         #endregion
     }

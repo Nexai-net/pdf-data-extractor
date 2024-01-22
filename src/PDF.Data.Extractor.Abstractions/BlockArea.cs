@@ -4,13 +4,16 @@
 
 namespace PDF.Data.Extractor.Abstractions
 {
-    using Newtonsoft.Json;
-
+    using System.Diagnostics;
+    using System.Numerics;
     using System.Runtime.Serialization;
+    using System.Text.Json.Serialization;
 
     /// <summary>
     /// Area covert by a block
     /// </summary>
+    [DataContract]
+    [DebuggerDisplay("X:{X}, Y:{Y}, Width: {Width}, Height: {Height}")]
     public sealed class BlockArea
     {
         #region Ctor
@@ -29,6 +32,10 @@ namespace PDF.Data.Extractor.Abstractions
             this.TopRight = new BlockPoint(x + width, y);
             this.BottomRight = new BlockPoint(x + width, y + height);
             this.BottomLeft = new BlockPoint(x, y + height);
+            this.TopLine = BlockCoordHelper.Diff(this.TopLeft, this.TopRight);
+            this.BottomLine = BlockCoordHelper.Diff(this.BottomLeft, this.BottomRight);
+            this.LeftLine = BlockCoordHelper.Diff(this.TopLeft, this.BottomLeft);
+            this.RightLine = BlockCoordHelper.Diff(this.TopRight, this.BottomRight);
         }
 
         #endregion
@@ -38,11 +45,13 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Gets the x coord.
         /// </summary>
+        [DataMember]
         public float X { get; }
 
         /// <summary>
         /// Gets the y coord.
         /// </summary>
+        [DataMember]
         public float Y { get; }
 
         /// <summary>
@@ -51,6 +60,7 @@ namespace PDF.Data.Extractor.Abstractions
         /// <remarks>
         ///     Draw from top to bottom (0, 0) is on the top right
         /// </remarks>
+        [DataMember]
         public float Width { get; }
 
         /// <summary>
@@ -59,6 +69,7 @@ namespace PDF.Data.Extractor.Abstractions
         /// <remarks>
         ///     Draw from top to bottom (0, 0) is on the top right
         /// </remarks>
+        [DataMember]
         public float Height { get; }
 
         /// <summary>
@@ -88,6 +99,34 @@ namespace PDF.Data.Extractor.Abstractions
         [JsonIgnore]
         [IgnoreDataMember]
         public BlockPoint BottomLeft { get; }
+
+        /// <summary>
+        /// Gets the bottom line (Left to Right)
+        /// </summary>
+        [JsonIgnore]
+        [IgnoreDataMember]
+        public Vector2 BottomLine { get; }
+
+        /// <summary>
+        /// Gets the top line (Left to Right)
+        /// </summary>
+        [JsonIgnore]
+        [IgnoreDataMember]
+        public Vector2 TopLine { get; }
+
+        /// <summary>
+        /// Gets the left line (Top to bottom)
+        /// </summary>
+        [JsonIgnore]
+        [IgnoreDataMember]
+        public Vector2 LeftLine { get; }
+
+        /// <summary>
+        /// Gets the right line Top to bottom)
+        /// </summary>
+        [JsonIgnore]
+        [IgnoreDataMember]
+        public Vector2 RightLine { get; }
 
         #endregion
     }

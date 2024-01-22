@@ -7,13 +7,13 @@ namespace PDF.Data.Extractor.Abstractions
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
+    using System.Runtime.Serialization;
 
     /// <summary>
     /// Define a page in the document
     /// </summary>
     /// <seealso cref="DataBlock" />
+    [DataContract]
     public sealed class DataPageBlock : DataBlock
     {
         #region Ctor
@@ -25,11 +25,13 @@ namespace PDF.Data.Extractor.Abstractions
                              int number,
                              int rotation,
                              BlockArea area,
+                             IEnumerable<DataRelationBlock> relations,
                              IEnumerable<DataBlock>? children)
             : base(uid, BlockTypeEnum.Page, area, null, children)
         {
             this.Number = number;
             this.Rotation = rotation;
+            this.Relations = relations?.ToArray() ?? Array.Empty<DataRelationBlock>();
         }
 
         #endregion
@@ -39,12 +41,20 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Gets the number in the document
         /// </summary>
+        [DataMember]
         public int Number { get; }
 
         /// <summary>
         /// Gets the rotation.
         /// </summary>
+        [DataMember]
         public int Rotation { get; }
+
+        /// <summary>
+        /// Gets the relations of block inside the pages.
+        /// </summary>
+        [DataMember]
+        public IReadOnlyCollection<DataRelationBlock> Relations { get; }
 
         #endregion
     }

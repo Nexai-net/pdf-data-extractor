@@ -9,11 +9,13 @@ namespace PDF.Data.Extractor.Abstractions
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.Serialization;
 
     /// <summary>
     /// Define an image in a page
     /// </summary>
     /// <seealso cref="DataBlock" />
+    [DataContract]
     public sealed class DataImageBlock : DataBlock
     {
         #region Ctor
@@ -24,7 +26,7 @@ namespace PDF.Data.Extractor.Abstractions
         public DataImageBlock(Guid uid,
                               string name,
                               string imageType,
-                              byte[] imageEncodedBytes,
+                              byte[] imageEncodedBytesBase64,
                               float width,
                               float height,
                               BlockArea area,
@@ -35,7 +37,7 @@ namespace PDF.Data.Extractor.Abstractions
         {
             this.Name = name;
             this.ImageType = imageType;
-            this.ImageEncodedBytes = imageEncodedBytes;
+            this.ImageEncodedBytesBase64 = imageEncodedBytesBase64;
             this.Width = width;
             this.Height = height;
             this.ShapePoints = shapePoints?.ToArray() ?? Array.Empty<BlockPoint>();
@@ -48,6 +50,7 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Gets the image name in the document.
         /// </summary>
+        [DataMember]
         public string Name { get; }
 
         /// <summary>
@@ -56,27 +59,44 @@ namespace PDF.Data.Extractor.Abstractions
         /// <remarks>
         ///     Could be used as file extension
         /// </remarks>
+        [DataMember]
         public string ImageType { get; }
 
         /// <summary>
         /// Gets the image encoded bytes.
         /// </summary>
-        public byte[] ImageEncodedBytes { get; }
+        [DataMember(EmitDefaultValue = false)]
+        public byte[]? ImageEncodedBytesBase64 { get; private set; }
 
         /// <summary>
         /// Gets the width.
         /// </summary>
+        [DataMember]
         public float Width { get; }
 
         /// <summary>
         /// Gets the height.
         /// </summary>
+        [DataMember]
         public float Height { get; }
 
         /// <summary>
         /// Gets points forming a shape use by the image in the page
         /// </summary>
+        [DataMember]
         public IEnumerable<BlockPoint> ShapePoints { get; }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Clears the image bytes.
+        /// </summary>
+        public void ClearImageBytes()
+        {
+            this.ImageEncodedBytesBase64 = null;
+        }
 
         #endregion
     }

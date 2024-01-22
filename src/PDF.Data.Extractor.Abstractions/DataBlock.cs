@@ -4,8 +4,6 @@
 
 namespace PDF.Data.Extractor.Abstractions
 {
-    using Newtonsoft.Json;
-
     using PDF.Data.Extractor.Abstractions.Tags;
 
     using System;
@@ -22,7 +20,7 @@ namespace PDF.Data.Extractor.Abstractions
     [JsonDerivedType(typeof(DataImageBlock), "image")]
     [JsonDerivedType(typeof(DataPageBlock), "page")]
     [JsonDerivedType(typeof(DataDocumentBlock), "document")]
-    [JsonDerivedType(typeof(DataColumnBlock), "column")]
+    [JsonDerivedType(typeof(DataRelationBlock), "relation")]
     public abstract class DataBlock
     {
         #region Ctor
@@ -56,6 +54,11 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Gets the rectable area used by the block on the page
         /// </summary>
+        /// <remarks>
+        ///     This area is mainly used by algorithme to group multiple block that formed the same text.
+        ///     Attention: this area is not oriented
+        ///     TODO : managed text transformed
+        /// </remarks>
         [DataMember]
         public BlockArea Area { get; }
 
@@ -69,16 +72,13 @@ namespace PDF.Data.Extractor.Abstractions
         /// Gets the tags.
         /// </summary>
         [DataMember(EmitDefaultValue = false)]
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public IReadOnlyCollection<DataTag>? Tags { get; }
 
         /// <summary>
         /// Gets the children.
         /// </summary>
         [DataMember(EmitDefaultValue = false)]
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public IReadOnlyCollection<DataBlock>? Children { get; }
-
 
         #endregion
     }

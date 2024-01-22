@@ -10,12 +10,16 @@ namespace PDF.Data.Extractor.Strategies
     using iText.Kernel.Pdf.Canvas;
 
     using PDF.Data.Extractor.Abstractions;
+    using PDF.Data.Extractor.Abstractions.MetaData;
     using PDF.Data.Extractor.Abstractions.Tags;
     using PDF.Data.Extractor.Models;
+    using PDF.Data.Extractor.Services;
 
     using System;
+    using System.Buffers.Text;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Numerics;
     using System.Text;
     using System.Threading.Tasks;
 
@@ -64,17 +68,27 @@ namespace PDF.Data.Extractor.Strategies
         /// </summary>
         public void AddTextData(string? actualTxtStr,
                                 float fontSize,
+                                float pointValue,
+                                TextFontMetaData fontInfo,
+                                float spaceWidth,
+                                float ligneSize,
                                 float xScale,
                                 Rectangle bbox,
                                 string text,
+                                float textBoxId,
                                 IEnumerable<CanvasTag> tags)
         {
             this._dataBlocks.Add(new DataTextBlock(Guid.NewGuid(),
                                                    actualTxtStr,
                                                    fontSize,
+                                                   pointValue,
+                                                   ligneSize,
                                                    xScale / 100.0f,
                                                    text,
+                                                   fontInfo.Uid,
+                                                   spaceWidth,
                                                    new BlockArea(bbox.GetX(), bbox.GetY(), bbox.GetWidth(), bbox.GetHeight()),
+                                                   textBoxId,
                                                    AnalyzeTags(tags),
                                                    null));
         }
@@ -99,8 +113,8 @@ namespace PDF.Data.Extractor.Strategies
 
             foreach (var point in drawShapePoints)
             {
-                var x = point.GetX();
-                var y = point.GetX();
+                var x = (float)point.GetX();
+                var y = (float)point.GetX();
 
                 drawBlockPoints.Add(new BlockPoint(x, y));
 
@@ -122,7 +136,7 @@ namespace PDF.Data.Extractor.Strategies
             this._dataBlocks.Add(new DataImageBlock(Guid.NewGuid(),
                                                     imgName.GetValue(),
                                                     ConvertImageType(imgType),
-                                                    imageEncodedBytes,
+                                                    Encoding.UTF8.GetBytes(Convert.ToBase64String(imageEncodedBytes, Base64FormattingOptions.None)),
                                                     width,
                                                     height,
                                                     area,
@@ -134,37 +148,18 @@ namespace PDF.Data.Extractor.Strategies
         /// <summary>
         /// Consolidates the block created, try group close text ...
         /// </summary>
-        public void Consolidate()
+        public IReadOnlyCollection<DataBlock> Consolidate(IReadOnlyCollection<IDataBlockMergeStrategy> strategies)
         {
+            var childrenBlocks = new List<DataBlock>(this._dataBlocks);
             foreach (var child in this._children)
-                child.Consolidate();
-
-            if (this._dataBlocks.Count <= 1)
-                return;
-
-            var texts = new List<DataTextBlock>(this._dataBlocks.OfType<DataTextBlock>()
-                                                                // Order on top to botton on reading direction Top -> Bottom
-                                                                .OrderBy(t => t.Area.Y)
-                                                                // Order Left to right in the reading order Left -> Right
-                                                                .ThenBy(t => t.Area.X));
-
-            for (int i = 0; i < texts.Count; i++)
             {
-                var current = texts[i];
-                for (int nextIndx = i + 1; nextIndx < texts.Count; nextIndx++)
-                {
-                    var next = texts[nextIndx];
+                var childResults = child.Consolidate(strategies);
 
-                    if (current.FontLevel != next.FontLevel)
-                        continue;
-
-                    if (current.Scale != next.Scale)
-                        continue;
-
-                    current.Area.TopRight 
-
-                }
+                if (childResults is not null)
+                    childrenBlocks.AddRange(childResults);
             }
+
+            return strategies.Apply(childrenBlocks);
         }
 
         #region Tools
@@ -176,12 +171,13 @@ namespace PDF.Data.Extractor.Strategies
         {
             // TODO : analyze tags
             return tags?.Select(t => new DataRawTag(t.GetActualText() ?? t.GetExpansionText()))
+                        .Where(t => !string.IsNullOrEmpty(t.Raw))
                         .ToArray() ?? Array.Empty<DataTag>();
         }
 
         private string ConvertImageType(ImageType imgType)
         {
-            throw new NotImplementedException();
+            return imgType.ToString();
         }
 
         #endregion

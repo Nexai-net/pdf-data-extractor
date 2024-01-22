@@ -4,18 +4,22 @@
 
 namespace PDF.Data.Extractor.Abstractions
 {
+    using PDF.Data.Extractor.Abstractions.MetaData;
+
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
+    using System.Runtime.Serialization;
 
     /// <summary>
     /// Data block representing a full document
     /// </summary>
     /// <seealso cref="DataBlock" />
+    [DataContract]
     public sealed class DataDocumentBlock : DataBlock
     {
+        #region Ctor
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DataDocumentBlock"/> class.
         /// </summary>
@@ -28,27 +32,72 @@ namespace PDF.Data.Extractor.Abstractions
                                  string keywords,
                                  string producer,
                                  string subject,
-                                 string title)
+                                 string title,
+                                 IEnumerable<TextFontMetaData> fonts)
             : base(uid, BlockTypeEnum.Document, area, null, children)
         {
-            this.Guid = guid;
             this.FileName = fileName;
-            this.PageBlocks = pageBlocks?.ToArray() ?? Array.Empty<DataPageBlock>();
             this.PDFVersion = pdfVersion;
             this.Author = author;
             this.Keywords = keywords;
             this.Producer = producer;
             this.subject = subject;
             this.Title = title;
+            this.Fonts = fonts?.ToArray() ?? Array.Empty<TextFontMetaData>();
         }
 
-        public Guid Guid { get; }
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Gets the name of the file.
+        /// </summary>
+        [DataMember]
         public string? FileName { get; }
+
+        /// <summary>
+        /// Gets the PDF version.
+        /// </summary>
+        [DataMember]
         public string PDFVersion { get; }
+
+        /// <summary>
+        /// Gets the author.
+        /// </summary>
+        [DataMember]
         public string Author { get; }
+
+        /// <summary>
+        /// Gets the keywords.
+        /// </summary>
+        [DataMember]
         public string Keywords { get; }
+
+        /// <summary>
+        /// Gets the producer.
+        /// </summary>
+        [DataMember]
         public string Producer { get; }
+
+        /// <summary>
+        /// Gets the subject.
+        /// </summary>
+        [DataMember]
         public string subject { get; }
+
+        /// <summary>
+        /// Gets the title.
+        /// </summary>
+        [DataMember]
         public string Title { get; }
+
+        /// <summary>
+        /// Gets the fonts used in the documents
+        /// </summary>
+        [DataMember]
+        public IReadOnlyCollection<TextFontMetaData> Fonts { get; }
+
+        #endregion
     }
 }

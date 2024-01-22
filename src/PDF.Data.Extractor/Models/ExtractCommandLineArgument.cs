@@ -18,6 +18,9 @@
         [Option('f', "force", Default = false, Required = false, HelpText = "Override the ouput if already exists")]
         public bool Force { get; set; }
 
+        [Option("IncludeImages", Default = false, Required = false, HelpText = "If set to true the image content will be integrated in the result json in bas64")]
+        public bool IncludeImages { get; set; }
+
         #endregion
     }
 }
