@@ -11,6 +11,7 @@ namespace PDF.Data.Extractor.Strategies
 
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Numerics;
 
     /// <summary>
@@ -52,22 +53,20 @@ namespace PDF.Data.Extractor.Strategies
         /// <summary>
         /// Test Linear rapporchment to merge
         /// </summary>
-        protected sealed override IReadOnlyCollection<DataTextBlock> Merge(IReadOnlyCollection<DataTextBlock> dataBlocks)
+        protected sealed override IReadOnlyCollection<DataTextBlock> Merge(IEnumerable<DataTextBlock> dataBlocks, CancellationToken token)
         {
-            var texts = dataBlocks;
+            IReadOnlyCollection<DataTextBlock> texts = dataBlocks.ToArray();
             int preventInfinitLoopCounter = this._maxMergeCount;
             bool needMoreMerge = false;
 
             do
             {
                 needMoreMerge = false;
+
                 // Try merge Left to Ritgh
                 var remains = TryMerge(texts,
                                        this.FontManager,
-                                       (source, sourceFont, target, targetFont) => TryMergeSiblingBlock(GetSourceComparePoint(source),
-                                                                                                        GetTargetComparePoint(target),
-                                                                                                        GetCompareSourceLign(source),
-                                                                                                        GetAllowedSpaceBetwenBlocks(source, sourceFont, target, targetFont)),
+                                       ValidateCanMerge,
 
                                        (source, sourceFont, target) => new DataTextBlock(Guid.NewGuid(),
                                                                                          MergeText(source.Text, target.Text),
@@ -81,10 +80,15 @@ namespace PDF.Data.Extractor.Strategies
                                                                                          MergeArea(source.Area, target.Area),
                                                                                          source.TextBoxId,
                                                                                          MergeTags(source.Tags, target.Tags),
-                                                                                         MergeChildren(source.Children, target.Children)));
+                                                                                         MergeChildren(source.Children, target.Children)),
+                                       token);
+
+                Debug.Assert(remains.Count <= texts.Count);
 
                 if (texts.Count > remains.Count)
                     needMoreMerge = true;
+
+                token.ThrowIfCancellationRequested();
 
                 texts = remains;
 
@@ -94,6 +98,20 @@ namespace PDF.Data.Extractor.Strategies
             // When Left to right finished try top to bottom
 
             return texts;
+        }
+
+        /// <summary>
+        /// Validates if blocks can be merged.
+        /// </summary>
+        protected virtual bool ValidateCanMerge(DataTextBlock source,
+                                                TextFontMetaData sourceFont,
+                                                DataTextBlock target,
+                                                TextFontMetaData targetFont)
+        {
+            return TryMergeSiblingBlock(GetSourceComparePoint(source),
+                                       GetTargetComparePoint(target),
+                                       GetCompareSourceLign(source),
+                                       GetAllowedSpaceBetwenBlocks(source, sourceFont, target, targetFont));
         }
 
         /// <summary>
@@ -157,7 +175,8 @@ namespace PDF.Data.Extractor.Strategies
         private IReadOnlyCollection<DataTextBlock> TryMerge(IReadOnlyCollection<DataTextBlock> texts,
                                                             IFontManager fontManager,
                                                             Func<DataTextBlock, TextFontMetaData, DataTextBlock, TextFontMetaData, bool> mergeTest,
-                                                            Func<DataTextBlock, TextFontMetaData, DataTextBlock, DataTextBlock> merge)
+                                                            Func<DataTextBlock, TextFontMetaData, DataTextBlock, DataTextBlock> merge,
+                                                            CancellationToken token)
         {
             if (texts.Count < 2)
                 return texts;
@@ -167,6 +186,8 @@ namespace PDF.Data.Extractor.Strategies
             {
                 var current = localCollection[i];
 
+                token.ThrowIfCancellationRequested();
+
                 if (current is null)
                     continue;
 
@@ -174,6 +195,8 @@ namespace PDF.Data.Extractor.Strategies
 
                 for (int nextIndx = i; nextIndx < localCollection.Count; nextIndx++)
                 {
+                    token.ThrowIfCancellationRequested();
+
                     if (nextIndx == i)
                         continue;
 
@@ -212,6 +235,7 @@ namespace PDF.Data.Extractor.Strategies
                 }
             }
 
+            token.ThrowIfCancellationRequested();
             return localCollection;
         }
 

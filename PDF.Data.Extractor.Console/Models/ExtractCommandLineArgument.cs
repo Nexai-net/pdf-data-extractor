@@ -1,4 +1,4 @@
-﻿namespace PDF.Data.Extractor.Models
+﻿namespace PDF.Data.Extractor.Console.Models
 {
     using CommandLine;
 

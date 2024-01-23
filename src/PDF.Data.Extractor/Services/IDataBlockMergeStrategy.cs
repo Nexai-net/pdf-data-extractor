@@ -21,6 +21,6 @@ namespace PDF.Data.Extractor.Services
         /// <summary>
         /// Merges the specified data blocks if needed, return all remain blocks
         /// </summary>
-        IReadOnlyCollection<DataBlock> Merge(IEnumerable<DataBlock> dataBlocks);
+        IReadOnlyCollection<DataBlock> Merge(IEnumerable<DataBlock> dataBlocks, CancellationToken token);
     }
 }

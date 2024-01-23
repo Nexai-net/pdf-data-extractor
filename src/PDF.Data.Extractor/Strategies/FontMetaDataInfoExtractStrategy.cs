@@ -27,6 +27,7 @@ namespace PDF.Data.Extractor.Strategies
 
         private readonly Dictionary<string, Dictionary<float, TextFontMetaData>> _cache;
         private readonly Dictionary<Guid, TextFontMetaData> _cacheById;
+        private readonly IFontManager? _overrideFontManager;
         private readonly ReaderWriterLockSlim _locker;
 
         private long _disposeCounter;
@@ -46,8 +47,10 @@ namespace PDF.Data.Extractor.Strategies
         /// <summary>
         /// Initializes a new instance of the <see cref="FontMetaDataInfoExtractStrategy"/> class.
         /// </summary>
-        public FontMetaDataInfoExtractStrategy()
+        public FontMetaDataInfoExtractStrategy(IFontManager? fontManager = null)
         {
+            this._overrideFontManager = fontManager;
+
             this._locker = new ReaderWriterLockSlim();
             this._cache = new Dictionary<string, Dictionary<float, TextFontMetaData>>(StringComparer.OrdinalIgnoreCase);
             this._cacheById = new Dictionary<Guid, TextFontMetaData>();

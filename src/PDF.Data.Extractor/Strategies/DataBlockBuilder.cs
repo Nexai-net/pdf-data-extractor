@@ -12,16 +12,12 @@ namespace PDF.Data.Extractor.Strategies
     using PDF.Data.Extractor.Abstractions;
     using PDF.Data.Extractor.Abstractions.MetaData;
     using PDF.Data.Extractor.Abstractions.Tags;
-    using PDF.Data.Extractor.Models;
     using PDF.Data.Extractor.Services;
 
     using System;
-    using System.Buffers.Text;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Numerics;
     using System.Text;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Build information about a data block
@@ -148,18 +144,21 @@ namespace PDF.Data.Extractor.Strategies
         /// <summary>
         /// Consolidates the block created, try group close text ...
         /// </summary>
-        public IReadOnlyCollection<DataBlock> Consolidate(IReadOnlyCollection<IDataBlockMergeStrategy> strategies)
+        public IReadOnlyCollection<DataBlock> Consolidate(IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
+                                                          CancellationToken token)
         {
             var childrenBlocks = new List<DataBlock>(this._dataBlocks);
             foreach (var child in this._children)
             {
-                var childResults = child.Consolidate(strategies);
+                var childResults = child.Consolidate(strategies, token);
+
+                token.ThrowIfCancellationRequested();
 
                 if (childResults is not null)
                     childrenBlocks.AddRange(childResults);
             }
 
-            return strategies.Apply(childrenBlocks);
+            return strategies.Apply(childrenBlocks, token);
         }
 
         #region Tools

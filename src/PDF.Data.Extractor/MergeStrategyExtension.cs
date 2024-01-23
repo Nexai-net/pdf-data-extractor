@@ -18,7 +18,8 @@ namespace PDF.Data.Extractor
         /// Apply a group of <see cref="IDataBlockMergeStrategy"/> to group of <see cref="DataBlock"/>
         /// </summary>
         public static IReadOnlyCollection<DataBlock> Apply(this IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
-                                                           IReadOnlyCollection<DataBlock> childrenBlocks)
+                                                           IReadOnlyCollection<DataBlock> childrenBlocks,
+                                                           CancellationToken token)
         {
             if (childrenBlocks == null || !childrenBlocks.Any())
                 return Array.Empty<DataBlock>();
@@ -36,9 +37,11 @@ namespace PDF.Data.Extractor
                         localChildrenBlocks.RemoveAt(i);
                         i--;
                     }
+
+                    token.ThrowIfCancellationRequested();
                 }
 
-                var remains = strategy.Merge(impacted);
+                var remains = strategy.Merge(impacted, token);
                 localChildrenBlocks.AddRange(remains);
             }
 

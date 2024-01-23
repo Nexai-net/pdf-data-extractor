@@ -12,7 +12,7 @@ namespace PDF.Data.Extractor.Strategies
     /// <summary>
     /// Base class of all strategy of merge algorithme
     /// </summary>
-    /// <seealso cref="PDF.Data.Extractor.Services.IDataTextBlockMergeStrategy" />
+    /// <seealso cref="IDataTextBlockMergeStrategy" />
     public abstract class DataBlockMergeBaseStrategy<TBlockType> : IDataBlockMergeStrategy
         where TBlockType : DataBlock
     {
@@ -25,13 +25,13 @@ namespace PDF.Data.Extractor.Strategies
         }
 
         /// <inheritdoc />
-        public IReadOnlyCollection<DataBlock> Merge(IEnumerable<DataBlock> dataBlocks)
+        public IReadOnlyCollection<DataBlock> Merge(IEnumerable<DataBlock> dataBlocks, CancellationToken token)
         {
-            return Merge(dataBlocks.Cast<TBlockType>().ToArray());
+            return Merge(dataBlocks.Cast<TBlockType>(), token);
         }
 
         /// <inheritdoc cref="IDataBlockMergeStrategy.Merge(IEnumerable{DataBlock})" />
-        protected abstract IReadOnlyCollection<DataBlock> Merge(IReadOnlyCollection<TBlockType> dataBlocks);
+        protected abstract IReadOnlyCollection<DataBlock> Merge(IEnumerable<TBlockType> dataBlocks, CancellationToken token);
 
         #endregion
     }

@@ -3,20 +3,10 @@
 using CommandLine;
 using CommandLine.Text;
 
-using iText.Kernel.Pdf;
-using iText.Kernel.Pdf.Canvas.Parser;
-using iText.Kernel.Pdf.Canvas.Parser.Listener;
-using iText.Kernel.Pdf.Canvas.Parser.Util;
-using iText.Pdfa;
-
-//using Newtonsoft.Json;
-//using Newtonsoft.Json.Converters;
-//using Newtonsoft.Json.Linq;
+using PDF.Data.Extractor;
 
 using PDF.Data.Extractor.Abstractions;
-using PDF.Data.Extractor.Models;
-using PDF.Data.Extractor.Services;
-using PDF.Data.Extractor.Strategies;
+using PDF.Data.Extractor.Console.Models;
 
 using System.Text;
 using System.Text.Json;
@@ -44,66 +34,13 @@ if (commandLine.Tag == ParserResultType.NotParsed)
     return;
 }
 
-DataDocumentBlock docBlock;
-
-using (var reader = new PdfReader(commandLine.Value.Source))
-using (var doc = new PdfDocument(reader))
-using (var fontManager = new FontMetaDataInfoExtractStrategy())
+using (var docBlockExtractor = new PDFExtractor())
 {
-    var mergeStrategy = new IDataBlockMergeStrategy[]
-    {
-        new DataTextBlockHorizontalSiblingMergeStrategy(fontManager),
-        new DataTextBlockVerticalSiblingMergeStrategy(fontManager, alignRight: false),
-        new DataTextBlockVerticalSiblingMergeStrategy(fontManager, alignRight: true)
-        // Align by center
-    };
-
-    var pages = doc.GetNumberOfPages();
-    var pageBlocks = new DataPageBlock[pages];
-
-    //var pageDatas = Enumerable.Range(1, pages)
-    //                          .Select(i => (indx: i, doc.GetPage(i)))
-    //                          .Select(p =>
-    //Parallel.For(0, pages, (number) =>
-    //await Parallel.ForEachAsync(pageDatas, (p, token) =>
-    //{
-    //    return Task.Run(() =>
-    //    {
-    //var number = p.indx;
-    //var page = p.Item2;
-
-    var number = 5;
-    var page = doc.GetPage(number);
-    Console.WriteLine("Start Analyse Page " + number);
-    //var page = doc.GetPage(number);
-
-    var strategy = new DataBlockExtractStrategy(fontManager);
-    var processor = new PdfCanvasProcessor(strategy);
-    processor.ProcessPageContent(page);
-
-    var pageBlock = strategy.Compile(number, page, mergeStrategy);
-    pageBlocks[number - 1] = pageBlock;
-    Console.WriteLine("Page " + number + " Analyzed");
-    //    });
-    //});
-
-    //await Task.WhenAll(pageDatas);
-
-    var docInfo = doc.GetDocumentInfo();
-
-    var defaultPageSize = doc.GetDefaultPageSize();
-
-    docBlock = new DataDocumentBlock(Guid.NewGuid(),
-                                     Path.GetFileNameWithoutExtension(commandLine.Value.Source),
-                                     new BlockArea(defaultPageSize.GetLeft(), defaultPageSize.GetTop(), defaultPageSize.GetWidth(), defaultPageSize.GetHeight()),
-                                     pageBlocks,
-                                     doc.GetPdfVersion().ToString(),
-                                     docInfo.GetAuthor(),
-                                     docInfo.GetKeywords(),
-                                     docInfo.GetProducer(),
-                                     docInfo.GetSubject(),
-                                     docInfo.GetTitle(),
-                                     fontManager.GetAll());
+    var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!, 
+                                                        options: new PDFExtractorOptions()
+                                                        {
+                                                            PageRange = Range.StartAt(1)
+                                                        });
 
     var current = new Uri(Directory.GetCurrentDirectory(), UriKind.Absolute);
 
