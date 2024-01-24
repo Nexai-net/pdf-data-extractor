@@ -188,7 +188,7 @@
             // TODO : Managed Moved area based on transformed matrix
 
             var fontInfo = this._fontMetaDataInfoExtractStrategy.AddOrGetFontInfo(fontSize, font);
-
+            /*
             Debug.WriteLine("---------------------------");
             Debug.WriteLine(string.Format("### text : '{0}'", actualTxtStr ?? text));
             Debug.WriteLine(string.Format("# fontSize : {0}", fontSize));
@@ -206,7 +206,7 @@
             Debug.WriteLine(string.Format("# font.GetAscent(\"pgqtm0i\", fontSize): {0}", font.GetAscent("pgqtm0i", fontSize)));
             Debug.WriteLine(string.Format("# font.GetDescent(\"pgqtm0i\", fontSize): {0}", font.GetDescent("pgqtm0i", fontSize)));
             Debug.WriteLine(string.Format("# font.GetDescent(\"pgqtm0i\", fontSize): TOTAL : {0}", font.GetAscent("pgqtm0i", fontSize) - font.GetDescent("pgqtm0i", fontSize)));
-
+            */
             Debug.Assert(this._currentBlockBuilder != null);
             this._currentBlockBuilder.AddTextData(actualTxtStr,
                                                   fontSize,

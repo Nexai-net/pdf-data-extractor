@@ -4,6 +4,8 @@
 
 namespace PDF.Data.Extractor.Viewer
 {
+    using PDF.Data.Extractor.Viewer.Tools;
+
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -26,6 +28,7 @@ namespace PDF.Data.Extractor.Viewer
     {
         public MainWindow()
         {
+            UIDispatchHost.RegisterDispatcher(this.Dispatcher);
             InitializeComponent();
         }
     }

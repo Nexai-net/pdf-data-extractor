@@ -16,6 +16,8 @@ namespace PDF.Data.Extractor
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using iText.Kernel.Pdf.Canvas;
+    using iText.Kernel.Pdf.Xobject;
 
     /// <summary>
     /// Extract all information and format them in <see cref="DataBlock"/> structure
@@ -94,6 +96,21 @@ namespace PDF.Data.Extractor
         /// Analyses stream from a pdf file and extract all information in format <see cref="DataBlock"/>
         /// </summary>
         public async ValueTask<DataDocumentBlock> AnalyseAsync(Stream stream,
+                                                       string documentName,
+                                                       CancellationToken token = default,
+                                                       PDFExtractorOptions? options = null)
+        {
+            using (var reader = new PdfReader(stream))
+            using (var doc = new PdfDocument(reader))
+            {
+                return await AnalyseAsync(doc, documentName, token, options);
+            }
+        }
+
+        /// <summary>
+        /// Analyses stream from a pdf file and extract all information in format <see cref="DataBlock"/>
+        /// </summary>
+        public async ValueTask<DataDocumentBlock> AnalyseAsync(PdfDocument doc,
                                                                string documentName,
                                                                CancellationToken token = default,
                                                                PDFExtractorOptions? options = null)
@@ -101,8 +118,6 @@ namespace PDF.Data.Extractor
             var asyncExtraction = options?.Asynchronous ?? true;
             var mergeStrategies = options?.OverrideStrategies?.ToArray() ?? this._defaultMergeStrategies;
 
-            using (var reader = new PdfReader(stream))
-            using (var doc = new PdfDocument(reader))
             using (var grpCancelToken = CancellationTokenSource.CreateLinkedTokenSource(this._lifetimeCancellationToken.Token, token))
             {
                 var lastPageNumber = doc.GetNumberOfPages();
@@ -114,7 +129,7 @@ namespace PDF.Data.Extractor
 
                 token.ThrowIfCancellationRequested();
 
-                var pageBlocks = new DataPageBlock[rangeAbsEnd - rangeAbsStart + 1];
+                var pageBlocks = new DataPageBlock[rangeAbsEnd - rangeAbsStart];
 
                 if (asyncExtraction)
                 {
@@ -134,16 +149,17 @@ namespace PDF.Data.Extractor
                 }
                 else
                 {
-                    for (int pageNumber = rangeAbsStart; pageNumber <= rangeAbsEnd; pageNumber++)
+                    for (int pageNumber = rangeAbsStart; pageNumber < rangeAbsEnd; pageNumber++)
                     {
                         var page = doc.GetPage(pageNumber);
-                        
+
                         token.ThrowIfCancellationRequested();
                         var pageDataBlock = await AnalysePageAsync(pageNumber,
                                                                    page,
                                                                    mergeStrategies,
                                                                    grpCancelToken.Token);
-                        pageBlocks[pageNumber - 1] = pageDataBlock;
+
+                        pageBlocks[pageNumber - rangeAbsStart] = pageDataBlock;
                     }
                 }
 

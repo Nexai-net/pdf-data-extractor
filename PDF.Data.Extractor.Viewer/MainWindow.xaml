@@ -4,9 +4,134 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PDF.Data.Extractor.Viewer"
+        xmlns:vm="clr-namespace:PDF.Data.Extractor.Viewer.ViewModels" xmlns:controls="clr-namespace:PDF.Data.Extractor.Viewer.Controls"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        MinHeight="450" 
+        MinWidth="800"
+        WindowState="Maximized">
+
+    <Window.DataContext>
+        <vm:MainWindowViewModel />
+    </Window.DataContext>
+
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="5px" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Menu -->
+        <Grid Grid.Column="0" 
+              MinWidth="250"
+              Margin="5"
+              Background="#AAAAAA">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBox Text="{Binding PdfFilePath, Mode=OneWay}" 
+                         IsReadOnly="True"
+                         Margin="5"/>
+
+                <Button Grid.Column="1"
+                        Margin="5"
+                        Command="{Binding PickPdfCommand}"
+                        Content=" ... " />
+
+                <Button Grid.Column="2"
+                        Margin="5"
+                        Command="{Binding AnalyzeCommand}"
+                        Content=" Analyze " />
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.3*" />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="0.3*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0" Content="Prev" Command="{Binding PrevPageCommand}" 
+                            VerticalAlignment="Center"
+                            Padding="3 2 3 2"
+                            Margin="5" />
+
+                    <TextBox Grid.Column="1"
+                             IsReadOnly="True"
+                             VerticalAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             HorizontalContentAlignment="Center"
+                             Text="{Binding DisplayPage, Mode=OneWay}"/>
+
+                    <Button Grid.Column="2" Content="Next" Command="{Binding NextPageCommand}" 
+                            VerticalAlignment="Center"
+                            Padding="3 2 3 2"
+                            Margin="5" />
+
+                    <TextBlock Grid.Column="3" VerticalAlignment="Center">
+                        <Run Text=" / " />
+                        <Run Text="{Binding MaxPage, Mode=OneWay}" />
+                    </TextBlock>
+                </Grid>
+            </Grid>
+
+            <Grid Grid.Row="2" Margin="5">
+                <ListView ItemsSource="{Binding DataBlocks}">
+                    <ListView.Resources>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+                        </Style>
+                    </ListView.Resources>
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayText}"
+                                       ToolTip="{Binding Area}"/>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Grid>
+
+        <GridSplitter  Grid.Column="1" 
+                       HorizontalAlignment="Center" 
+                       VerticalAlignment="Stretch" 
+                       Width="3px" 
+                       Background="Black"/>
+
+        <controls:PDFPageViewer Grid.Column="2" 
+                                Page="{Binding Page, Mode=OneWay}" 
+                                Document="{Binding PdfDocument, Mode=OneWay}"
+                                DataBlocks="{Binding DataBlocks, Mode=OneWay}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Margin="5" />
+
+        <ProgressBar Grid.Row="1" Grid.ColumnSpan="3" Height="10" IsIndeterminate="{Binding IsWorking}" Margin="5" />
 
     </Grid>
 </Window>
