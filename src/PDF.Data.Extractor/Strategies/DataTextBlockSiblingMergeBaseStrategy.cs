@@ -74,6 +74,7 @@ namespace PDF.Data.Extractor.Strategies
                                                                                          source.PointValue,
                                                                                          source.LineSize,
                                                                                          source.Scale,
+                                                                                         source.Magnitude,
                                                                                          MergeText(source.Text, target.Text) ?? string.Empty,
                                                                                          source.FontInfoUid,
                                                                                          source.SpaceWidth,
@@ -110,6 +111,8 @@ namespace PDF.Data.Extractor.Strategies
         {
             return TryMergeSiblingBlock(GetSourceComparePoint(source),
                                        GetTargetComparePoint(target),
+                                       GetCompareSourceLign(source),
+                                       GetCompareSourceLign(target),
                                        GetCompareSourceLign(source),
                                        GetAllowedSpaceBetwenBlocks(source, sourceFont, target, targetFont));
         }
@@ -218,6 +221,9 @@ namespace PDF.Data.Extractor.Strategies
                     if (current.Scale != next.Scale)
                         continue;
 
+                    if (current.Magnitude != next.Magnitude)
+                        continue;
+
                     // With LineSizePoint we managed to ensure scaling
                     if (current.LineSize != next.LineSize || currentFont.LineSizePoint != nextFont.LineSizePoint)
                         continue;
@@ -252,6 +258,8 @@ namespace PDF.Data.Extractor.Strategies
         /// </summary>
         private bool TryMergeSiblingBlock(BlockPoint blockASide,
                                           BlockPoint blockBSide,
+                                          Vector2 blockAlignSideLine,
+                                          Vector2 blockBlignSideLine,
                                           Vector2 alignLine,
                                           float distTolerance)
         {
@@ -259,9 +267,10 @@ namespace PDF.Data.Extractor.Strategies
             var dist = blockDiff.Length();
 
             var angle = BlockCoordHelper.RadianAngle(alignLine, blockDiff);
+            var targetSourceAngle = BlockCoordHelper.RadianAngle(blockAlignSideLine, blockBlignSideLine);
 
             // Block are not aligned
-            return Math.Abs(angle) <= BlockCoordHelper.ALIGN_MAGNITUDE_TOLERANCE &&
+            return (Math.Abs(angle) <= BlockCoordHelper.ALIGN_MAGNITUDE_TOLERANCE || Math.Abs(targetSourceAngle) <= BlockCoordHelper.ALIGN_MAGNITUDE_TOLERANCE) &&
                    dist <= distTolerance;
         }
 

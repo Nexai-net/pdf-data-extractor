@@ -28,6 +28,7 @@ namespace PDF.Data.Extractor.Abstractions
                              float pointValue,
                              float ligneSize,
                              float scale,
+                             float magnitude,
                              string text,
                              Guid fontInfoUid,
                              float spaceWidth,
@@ -43,6 +44,7 @@ namespace PDF.Data.Extractor.Abstractions
             this.PointValue = pointValue;
             this.Scale = scale;
             this.Text = text;
+            this.Magnitude = magnitude;
             this.FontInfoUid = fontInfoUid;
             this.SpaceWidth = spaceWidth;
             this.TextBoxId = textBoxId;
@@ -87,6 +89,12 @@ namespace PDF.Data.Extractor.Abstractions
         /// </summary>
         [DataMember]
         public string Text { get; }
+
+        /// <summary>
+        /// Gets the magnitude in degree
+        /// </summary>
+        [DataMember]
+        public float Magnitude { get; }
 
         /// <summary>
         /// Gets the font information uid.

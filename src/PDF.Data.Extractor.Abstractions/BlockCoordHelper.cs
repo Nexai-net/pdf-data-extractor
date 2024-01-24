@@ -15,6 +15,8 @@ namespace PDF.Data.Extractor.Abstractions
     {
         #region Fields
 
+        public static readonly double RIGHT_ANGLE_RADIAN = Math.PI / 2.0d;
+
         public const float EQUALITY_TOLERANCE = 0.001f;
         public static readonly float ALIGN_MAGNITUDE_TOLERANCE = (float)Math.Cos(3 / Math.PI);
 

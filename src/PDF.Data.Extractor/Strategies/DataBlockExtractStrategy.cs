@@ -1,5 +1,6 @@
 ﻿namespace PDF.Data.Extractor.Strategies
 {
+    using iText.Forms.Form.Element;
     using iText.Kernel.Geom;
     using iText.Kernel.Pdf;
     using iText.Kernel.Pdf.Canvas.Parser;
@@ -22,9 +23,12 @@
     {
         #region Fields
 
+        private const double DEGREE_TO_RADION_RATIO = Math.PI / 180.0f;
+
         private readonly IFontMetaDataInfoExtractStrategy _fontMetaDataInfoExtractStrategy;
         private readonly CancellationToken _token;
         private readonly IReadOnlyDictionary<Type, Action<IEventData>> _dataTypeProcessor;
+        private readonly Rectangle _pageSize;
 
         private static readonly ICollection<EventType> s_eventTypeManaged;
 
@@ -54,9 +58,11 @@
         /// Initializes a new instance of the <see cref="DataBlockExtractStrategy"/> class.
         /// </summary>
         public DataBlockExtractStrategy(IFontMetaDataInfoExtractStrategy fontMetaDataInfoExtractStrategy,
-                                        CancellationToken token)
+                                        CancellationToken token,
+                                        Rectangle pageSize)
         {
             this._token = token;
+            this._pageSize = pageSize;
             this._fontMetaDataInfoExtractStrategy = fontMetaDataInfoExtractStrategy;
             this._roots = new List<DataBlockBuilder>();
 
@@ -119,7 +125,10 @@
             return new DataPageBlock(Guid.NewGuid(),
                                      pageNumber,
                                      page.GetRotation(),
-                                     new BlockArea(pageSize.GetLeft(), pageSize.GetTop(), pageSize.GetWidth(), pageSize.GetHeight()),
+                                     new BlockArea(new BlockPoint(pageSize.GetLeft(), pageSize.GetTop()),
+                                                   new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
+                                                   new BlockPoint(pageSize.GetRight(), pageSize.GetBottom()),
+                                                   new BlockPoint(pageSize.GetLeft(), pageSize.GetBottom())),
                                      null, // TODO : Relation Not comput now
                                      pageBlocks);
         }
@@ -154,59 +163,26 @@
             var charact = new CharacterRenderInfo(txt);
             var bbox = charact.GetBoundingBox();
 
-            var top = bbox.GetTop();
-            var left = bbox.GetLeft();
-            
-            var right = left + bbox.GetWidth();
-            var bottom = top + bbox.GetHeight();
+            var accendLine = txt.GetAscentLine();
+            var descendLine = txt.GetDescentLine();
 
-            var topLine = new Line(left, top, right, top);
-            var bottomLine = new Line(left, bottom, right, bottom);
+            var topLeftPoint = accendLine.GetStartPoint();
+            var topRightPoint = accendLine.GetEndPoint();
+            var bottomRightPoint = descendLine.GetEndPoint();
+            var bottomLeftPoint = descendLine.GetStartPoint();
 
-            var transformedTopLine = ShapeTransformUtil.TransformLine(topLine, matrix);
-            var transformedBottomLine = ShapeTransformUtil.TransformLine(bottomLine, matrix);
+            var topLeft = new BlockPoint(topLeftPoint.Get(Vector.I1), this._pageSize.GetHeight() - topLeftPoint.Get(Vector.I2));
+            var topRight = new BlockPoint(topRightPoint.Get(Vector.I1), this._pageSize.GetHeight() - topRightPoint.Get(Vector.I2));
+            var bottomRight = new BlockPoint(bottomRightPoint.Get(Vector.I1), this._pageSize.GetHeight() - bottomRightPoint.Get(Vector.I2));
+            var bottomLeft = new BlockPoint(bottomLeftPoint.Get(Vector.I1), this._pageSize.GetHeight() - bottomLeftPoint.Get(Vector.I2));
 
-            var transformedTopLeft = transformedTopLine.GetBasePoints()[0];
-            var transformedTopRight = transformedTopLine.GetBasePoints()[1];
-
-            var transformedBottomLeft = transformedBottomLine.GetBasePoints()[0];
-            var transformedBottomRight = transformedBottomLine.GetBasePoints()[1];
-
-            //var location = charact.GetLocation();
             var text = charact.GetText();
 
-            //var accendLine = txt.GetAscentLine();
-            //var descendLine = txt.GetDescentLine();
-
-            //var ligneSize = Math.Abs(accendLine.GetStartPoint().Get(1) - descendLine.GetStartPoint().Get(1));
-
-            // TODO : Use those variable to improve calcul for grouping word
-
-            //var charSpacing = txt.GetCharSpacing();
-            //var wordSpacing = txt.GetWordSpacing();
-
-            // TODO : Managed Moved area based on transformed matrix
+            var location = charact.GetLocation();
+            var magnitude = location.OrientationMagnitude();
 
             var fontInfo = this._fontMetaDataInfoExtractStrategy.AddOrGetFontInfo(fontSize, font);
-            /*
-            Debug.WriteLine("---------------------------");
-            Debug.WriteLine(string.Format("### text : '{0}'", actualTxtStr ?? text));
-            Debug.WriteLine(string.Format("# fontSize : {0}", fontSize));
-            Debug.WriteLine(string.Format("# sizeAdjusted : {0}", sizeAdjusted));
-            Debug.WriteLine(string.Format("# xScale : {0}", xScale));
-            Debug.WriteLine(string.Format("# txt.GetSingleSpaceWidth() : {0}", txt.GetSingleSpaceWidth()));
-            Debug.WriteLine(string.Format("# ligneSize : {0}", fontInfo.LineSizePoint));
-            Debug.WriteLine(string.Format("# txt.GetLeading() : {0}", txt.GetLeading()));
-            Debug.WriteLine(string.Format("# txt.GetMcid() : {0}", txt.GetMcid()));
-            Debug.WriteLine(string.Format("# txt.GetRise() : {0}", txt.GetRise()));
-            Debug.WriteLine(string.Format("# txt.GetTextRenderMode() : {0}", txt.GetTextRenderMode()));
-            Debug.WriteLine(string.Format("# font.GetFontProgram().GetRegistry() : {0}", font.GetFontProgram().GetRegistry()));
-            Debug.WriteLine(string.Format("# font.GetFontProgram().GetFontMetrics().GetXHeight(): {0}", font.GetFontProgram().GetFontMetrics().GetXHeight()));
-            Debug.WriteLine(string.Format("# font.CreateGlyphLine(\"pgqtm0i\").Size(): {0}", font.CreateGlyphLine("pgqtm0i").Size()));
-            Debug.WriteLine(string.Format("# font.GetAscent(\"pgqtm0i\", fontSize): {0}", font.GetAscent("pgqtm0i", fontSize)));
-            Debug.WriteLine(string.Format("# font.GetDescent(\"pgqtm0i\", fontSize): {0}", font.GetDescent("pgqtm0i", fontSize)));
-            Debug.WriteLine(string.Format("# font.GetDescent(\"pgqtm0i\", fontSize): TOTAL : {0}", font.GetAscent("pgqtm0i", fontSize) - font.GetDescent("pgqtm0i", fontSize)));
-            */
+
             Debug.Assert(this._currentBlockBuilder != null);
             this._currentBlockBuilder.AddTextData(actualTxtStr,
                                                   fontSize,
@@ -215,7 +191,8 @@
                                                   txt.GetSingleSpaceWidth(),
                                                   fontInfo.LineSizePoint * sizeAdjusted,
                                                   xScale,
-                                                  bbox,
+                                                  magnitude,
+                                                  new BlockArea(topLeft, topRight, bottomRight, bottomLeft),
                                                   text,
                                                   txt.GetMcid(),
                                                   tags);

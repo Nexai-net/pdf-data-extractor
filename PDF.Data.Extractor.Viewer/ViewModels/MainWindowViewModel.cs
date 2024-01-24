@@ -9,6 +9,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
     using Microsoft.Win32;
 
+    using PDF.Data.Extractor.Services;
     using PDF.Data.Extractor.Viewer.Models;
     using PDF.Data.Extractor.Viewer.Tools;
 
@@ -18,6 +19,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
     using System.IO;
     using System.Linq;
     using System.Runtime.CompilerServices;
+    using System.Security.Permissions;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
@@ -37,6 +39,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         private PdfReader? _docReader;
         private int _displayPage;
         private IReadOnlyCollection<DataBlockViewModel> _dataBlocks;
+        private bool _autoAnalyzeWhenChangePage;
         private readonly AsyncDelegateCommand _analyzeCommand;
 
         private readonly DelegateCommand _pickPdfCommand;
@@ -104,6 +107,12 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
             get { return this._ironDocument; }
         }
 
+        public bool AutoAnalyzeWhenChangePage
+        {
+            get { return this._autoAnalyzeWhenChangePage; }
+            set { SetProperty(ref this._autoAnalyzeWhenChangePage, value); }
+        }
+
         public bool IsWorking
         {
             get { return Interlocked.Read(ref this._workingCounter) > 0; }
@@ -149,6 +158,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                                                                   Path.GetFileNameWithoutExtension(this._pdfFilePath)!,
                                                                   options: new PDFExtractorOptions()
                                                                   {
+                                                                      //OverrideStrategies = new List<IDataBlockMergeStrategy>(),
                                                                       PageRange = new Range(this.DisplayPage - 1, this.DisplayPage)
                                                                   });
 
@@ -185,13 +195,14 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                     this._docReader?.Close();
                     this._document?.Close();
 
-                    this._pdfFilePath = openFileDialog.FileName;
+                    this.PdfFilePath = openFileDialog.FileName;
                     this._docReader = new PdfReader(this._pdfFilePath);
                     this._document = new iText.Kernel.Pdf.PdfDocument(this._docReader);
                     this._ironDocument = new IronPdf.PdfDocument(this._pdfFilePath);
                     OnPropertyChanged(nameof(this.PdfDocument));
 
                     this._displayPage = 1;
+                    OnPropertyChanged(nameof(this.MaxPage));
                     OnPropertyChanged(nameof(this.DisplayPage));
 
                     SelectPage(1);
@@ -216,6 +227,10 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
             var pageSize = itextPage.GetPageSize();
             this.Page = new PdfPageInfo(pageNumber, (int)pageSize.GetWidth(), (int)pageSize.GetHeight());
             RefreshViewModelState();
+            this.DataBlocks = Array.Empty<DataBlockViewModel>();
+
+            if (this.AutoAnalyzeWhenChangePage)
+                this.AnalyzeCommand.Execute(null);
         }
 
         /// <summary>

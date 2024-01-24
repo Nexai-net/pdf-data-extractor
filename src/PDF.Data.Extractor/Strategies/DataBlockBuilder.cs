@@ -69,7 +69,8 @@ namespace PDF.Data.Extractor.Strategies
                                 float spaceWidth,
                                 float ligneSize,
                                 float xScale,
-                                Rectangle bbox,
+                                float magnitude,
+                                BlockArea area,
                                 string text,
                                 float textBoxId,
                                 IEnumerable<CanvasTag> tags)
@@ -80,10 +81,11 @@ namespace PDF.Data.Extractor.Strategies
                                                    pointValue,
                                                    ligneSize,
                                                    xScale / 100.0f,
+                                                   magnitude,
                                                    text,
                                                    fontInfo.Uid,
                                                    spaceWidth,
-                                                   new BlockArea(bbox.GetX(), bbox.GetY(), bbox.GetWidth(), bbox.GetHeight()),
+                                                   area,
                                                    textBoxId,
                                                    AnalyzeTags(tags),
                                                    null));
@@ -127,7 +129,10 @@ namespace PDF.Data.Extractor.Strategies
                     areaMaxY = y;
             }
 
-            var area = new BlockArea(areaX, areaY, areaMaxX - areaX, areaMaxY - areaY);
+            var area = new BlockArea(new BlockPoint(areaX, areaY),
+                                     new BlockPoint(areaMaxX, areaY), 
+                                     new BlockPoint(areaMaxX, areaMaxY),
+                                     new BlockPoint(areaX, areaMaxY));
 
             this._dataBlocks.Add(new DataImageBlock(Guid.NewGuid(),
                                                     imgName.GetValue(),

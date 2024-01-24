@@ -40,11 +40,13 @@ namespace PDF.Data.Extractor.Strategies
         }
 
         /// <inheritdoc />
-        protected override float GetAllowedSpaceBetwenBlocks(DataTextBlock source, TextFontMetaData sourceFont, DataTextBlock target, TextFontMetaData targetFont)
+        protected override float GetAllowedSpaceBetwenBlocks(DataTextBlock source,
+                                                             TextFontMetaData sourceFont,
+                                                             DataTextBlock target,
+                                                             TextFontMetaData targetFont)
         {
-            // Take max char space with 10% delta
-            return Math.Max((sourceFont.MaxWidth * source.PointValue) + ((source.Text?.Count(c => c == ' ') ?? 0) * source.SpaceWidth), 
-                            (targetFont.MaxWidth * target.PointValue) + ((target.Text?.Count(c => c == ' ') ?? 0) * target.SpaceWidth)) * 1.1f;
+            // return (sourceFont.MaxWidth * source.PointValue) + ((source.Text?.Count(c => c == ' ') ?? 0) * source.SpaceWidth * 1.5f);
+            return source.SpaceWidth;
         }
 
         /// <inheritdoc />
@@ -68,11 +70,7 @@ namespace PDF.Data.Extractor.Strategies
         /// <inheritdoc />
         protected override BlockArea MergeArea(BlockArea source, BlockArea target)
         {
-            var result = new BlockArea(source.X,
-                                       source.Y,
-                                       Math.Abs(Math.Max(source.TopRight.X, target.TopRight.X) - Math.Min(source.TopLeft.X, target.TopLeft.X)),
-                                       Math.Abs(Math.Max(source.BottomLeft.Y, target.BottomLeft.Y) - Math.Min(source.TopLeft.Y, target.TopLeft.Y)));
-
+            var result = new BlockArea(source.TopLeft, target.TopRight, target.BottomRight, source.BottomLeft);
             return result;
         }
 

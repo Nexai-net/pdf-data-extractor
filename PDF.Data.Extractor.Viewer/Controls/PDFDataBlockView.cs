@@ -9,43 +9,69 @@ namespace PDF.Data.Extractor.Viewer.Controls
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Media;
-    using System.Windows.Shapes;
 
-    public sealed class PDFDataBlockView
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref="System.Windows.FrameworkElement" />
+    public sealed class PDFDataBlockView : Control
     {
         #region Fields
 
+        private static readonly DependencyPropertyKey s_pointsPropertyKey = DependencyProperty.RegisterReadOnly(nameof(Points),
+                                                                                                              typeof(PointCollection),
+                                                                                                              typeof(PDFDataBlockView),
+                                                                                                              new PropertyMetadata(null));
+
+        public static readonly DependencyProperty PointsProperty = s_pointsPropertyKey.DependencyProperty;
+
+        private static readonly DependencyPropertyKey s_cornerTopLeftPropertyKey = DependencyProperty.RegisterReadOnly(nameof(CornerTopLeft),
+                                                                                                                       typeof(Point?),
+                                                                                                                       typeof(PDFDataBlockView),
+                                                                                                                       new PropertyMetadata(null));
+
+        public static readonly DependencyProperty CornerTopLeftProperty = s_cornerTopLeftPropertyKey.DependencyProperty;
+
+
         private readonly DataBlockViewModel _dataBlock;
+        private readonly PDFPageViewer _pageViewer;
 
         #endregion
 
         #region Ctor
 
         /// <summary>
+        /// Initializes the <see cref="PDFDataBlockView"/> class.
+        /// </summary>
+        static PDFDataBlockView()
+        {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(PDFDataBlockView),
+                                                     new FrameworkPropertyMetadata(typeof(PDFDataBlockView)));
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="PDFDataBlockView"/> class.
         /// </summary>
-        public PDFDataBlockView(DataBlockViewModel dataBlock)
+        public PDFDataBlockView(DataBlockViewModel dataBlock, PDFPageViewer pageViewer)
         {
             this._dataBlock = dataBlock;
+            this.DataContext = dataBlock;
 
-            this.Shape = new Polygon();
-
-            Canvas.SetLeft(this.Shape, dataBlock.Area.TopLeft.X);
-            Canvas.SetTop(this.Shape, dataBlock.Area.TopLeft.Y);
+            this._pageViewer = pageViewer;
 
             var area = dataBlock.Area;
+            var topleft = new Point(area.TopLeft.X, area.TopLeft.Y);
+            var topRight = new Point(area.TopRight.X, area.TopRight.Y);
+            var bottomRight = new Point(area.BottomRight.X, area.BottomRight.Y);
+            var bottomLeft = new Point(area.BottomLeft.X, area.BottomLeft.Y);
 
-            this.Shape.ToolTip = dataBlock.DisplayText;
+            var collection = new PointCollection(new Point[]
+            {
+                topleft, topRight, bottomRight, bottomLeft
+            });
 
-            this.Shape.Fill = Brushes.Transparent;
-
-            this.Shape.Stroke = Brushes.Blue;
-            this.Shape.StrokeThickness = 2;
-
-            this.Shape.Points.Add(new Point(area.TopLeft.X, area.TopLeft.Y));
-            this.Shape.Points.Add(new Point(area.TopRight.X, area.TopRight.Y));
-            this.Shape.Points.Add(new Point(area.BottomRight.X, area.BottomRight.Y));
-            this.Shape.Points.Add(new Point(area.BottomLeft.X, area.BottomLeft.Y));
+            SetValue(s_cornerTopLeftPropertyKey, topleft);
+            SetValue(s_pointsPropertyKey, collection);
 
             dataBlock.PropertyChanged -= DataBlock_PropertyChanged;
             dataBlock.PropertyChanged += DataBlock_PropertyChanged;
@@ -56,9 +82,20 @@ namespace PDF.Data.Extractor.Viewer.Controls
         #region Properties
 
         /// <summary>
-        /// Gets the shape.
+        /// Gets shape's points.
         /// </summary>
-        public Polygon Shape { get; }
+        public PointCollection Points
+        {
+            get { return (PointCollection)GetValue(PointsProperty); }
+        }
+
+        /// <summary>
+        /// Gets the top left corner
+        /// </summary>
+        public Point? CornerTopLeft
+        {
+            get { return (Point?)GetValue(CornerTopLeftProperty); }
+        }
 
         #endregion
 
@@ -68,11 +105,9 @@ namespace PDF.Data.Extractor.Viewer.Controls
         {
             if (this._dataBlock.IsSelected)
             {
-                this.Shape.Fill = new SolidColorBrush(Color.FromArgb(80, 50, 25, 23));
             }
             else
             {
-                this.Shape.Fill = Brushes.Transparent;
             }
         }
 

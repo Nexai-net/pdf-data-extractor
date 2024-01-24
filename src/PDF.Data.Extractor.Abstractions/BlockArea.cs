@@ -21,21 +21,26 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Initializes a new instance of the <see cref="BlockArea"/> class.
         /// </summary>
-        public BlockArea(float x, float y, float width, float height)
+        public BlockArea(BlockPoint topLeft,
+                         BlockPoint topRight,
+                         BlockPoint bottomRight,
+                         BlockPoint bottomLeft)
         {
-            this.X = x;
-            this.Y = y;
-            this.Width = width;
-            this.Height = height;
+            this.X = topLeft.X;
+            this.Y = topLeft.Y;
 
-            this.TopLeft = new BlockPoint(x, y);
-            this.TopRight = new BlockPoint(x + width, y);
-            this.BottomRight = new BlockPoint(x + width, y + height);
-            this.BottomLeft = new BlockPoint(x, y + height);
+            this.TopLeft = topLeft;
+            this.TopRight = topRight;
+            this.BottomRight = bottomRight;
+            this.BottomLeft = bottomLeft;
+
             this.TopLine = BlockCoordHelper.Diff(this.TopLeft, this.TopRight);
             this.BottomLine = BlockCoordHelper.Diff(this.BottomLeft, this.BottomRight);
             this.LeftLine = BlockCoordHelper.Diff(this.TopLeft, this.BottomLeft);
             this.RightLine = BlockCoordHelper.Diff(this.TopRight, this.BottomRight);
+
+            this.Width = this.TopLine.Length();
+            this.Height = this.LeftLine.Length();
         }
 
         #endregion
@@ -45,13 +50,15 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Gets the x coord.
         /// </summary>
-        [DataMember]
+        [JsonIgnore]
+        [IgnoreDataMember]
         public float X { get; }
 
         /// <summary>
         /// Gets the y coord.
         /// </summary>
-        [DataMember]
+        [JsonIgnore]
+        [IgnoreDataMember]
         public float Y { get; }
 
         /// <summary>
@@ -60,7 +67,8 @@ namespace PDF.Data.Extractor.Abstractions
         /// <remarks>
         ///     Draw from top to bottom (0, 0) is on the top right
         /// </remarks>
-        [DataMember]
+        [JsonIgnore]
+        [IgnoreDataMember]
         public float Width { get; }
 
         /// <summary>
@@ -69,35 +77,32 @@ namespace PDF.Data.Extractor.Abstractions
         /// <remarks>
         ///     Draw from top to bottom (0, 0) is on the top right
         /// </remarks>
-        [DataMember]
+        [JsonIgnore]
+        [IgnoreDataMember]
         public float Height { get; }
 
         /// <summary>
         /// Gets the top left corner
         /// </summary>
-        [JsonIgnore]
-        [IgnoreDataMember]
+        [DataMember]
         public BlockPoint TopLeft { get; }
 
         /// <summary>
         /// Gets the top right corner
         /// </summary>
-        [JsonIgnore]
-        [IgnoreDataMember]
+        [DataMember]
         public BlockPoint TopRight { get; }
 
         /// <summary>
         /// Gets the bottom right corner
         /// </summary>
-        [JsonIgnore]
-        [IgnoreDataMember]
+        [DataMember]
         public BlockPoint BottomRight { get; }
 
         /// <summary>
         /// Gets the bottom right corner
         /// </summary>
-        [JsonIgnore]
-        [IgnoreDataMember]
+        [DataMember]
         public BlockPoint BottomLeft { get; }
 
         /// <summary>

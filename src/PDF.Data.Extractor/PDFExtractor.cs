@@ -169,10 +169,10 @@ namespace PDF.Data.Extractor
 
                 var docBlock = new DataDocumentBlock(Guid.NewGuid(),
                                                      documentName,
-                                                     new BlockArea(defaultPageSize.GetLeft(),
-                                                                   defaultPageSize.GetTop(),
-                                                                   defaultPageSize.GetWidth(),
-                                                                   defaultPageSize.GetHeight()),
+                                                     new BlockArea(new BlockPoint(defaultPageSize.GetLeft(), defaultPageSize.GetTop()),
+                                                                   new BlockPoint(defaultPageSize.GetRight(), defaultPageSize.GetTop()),
+                                                                   new BlockPoint(defaultPageSize.GetRight(), defaultPageSize.GetBottom()),
+                                                                   new BlockPoint(defaultPageSize.GetLeft(), defaultPageSize.GetBottom())),
                                                      pageBlocks,
                                                      doc.GetPdfVersion().ToString(),
                                                      docInfo.GetAuthor(),
@@ -207,7 +207,9 @@ namespace PDF.Data.Extractor
 
             try
             {
-                var strategy = new DataBlockExtractStrategy(this._fontMetaDataInfoExtractStrategy, token);
+                var strategy = new DataBlockExtractStrategy(this._fontMetaDataInfoExtractStrategy,
+                                                            token,
+                                                            page.GetPageSize());
                 var processor = new PdfCanvasProcessor(strategy);
                 processor.ProcessPageContent(page);
 

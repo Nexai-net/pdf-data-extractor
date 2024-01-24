@@ -42,14 +42,14 @@ namespace PDF.Data.Extractor.Strategies
         /// <inheritdoc />
         protected override List<DataTextBlock> PrepateBlocks(IEnumerable<DataTextBlock> texts)
         {
-            return base.PrepateBlocks(texts.OrderByDescending(t => t.Area.Y).ThenBy(t => t.Area.X));
+            return base.PrepateBlocks(texts.OrderBy(t => t.Area.Y).ThenBy(t => t.Area.X));
         }
 
         /// <inheritdoc />
         protected override float GetAllowedSpaceBetwenBlocks(DataTextBlock source, TextFontMetaData sourceFont, DataTextBlock target, TextFontMetaData targetFont)
         {
             // Take max ligne space space with 10% delta
-            return source.LineSize * 2.5f;
+            return source.LineSize;
         }
 
         /// <inheritdoc />
@@ -82,12 +82,62 @@ namespace PDF.Data.Extractor.Strategies
         /// <inheritdoc />
         protected override BlockArea MergeArea(BlockArea source, BlockArea target)
         {
-            var result = new BlockArea(source.X,
-                                       source.Y,
-                                       Math.Abs(Math.Max(source.TopRight.X, target.TopRight.X) - Math.Min(source.TopLeft.X, target.TopLeft.X)),
-                                       Math.Abs(Math.Max(source.BottomLeft.Y, target.BottomLeft.Y) - Math.Min(source.TopLeft.Y, target.TopLeft.Y)));
+            var result = new BlockArea(source.TopLeft, source.TopRight,
+                                       target.BottomRight, target.BottomLeft);
+
+            result = EnsureLeftAlign(result);
+
+            var topLineLen = result.TopLine.Length();
+            var bottomLineLen = result.BottomLine.Length();
+
+            if (topLineLen != bottomLineLen)
+            {
+                var maxLineLen = Math.Max(topLineLen, bottomLineLen);
+
+                if (topLineLen != maxLineLen)
+                {
+                    var newTopLine = (result.TopLine / result.TopLine.Length()) * maxLineLen;
+                    var newEnd = new Vector2(result.TopLeft.X, result.TopLeft.Y) + newTopLine;
+                    result = new BlockArea(result.TopLeft,
+                                           new BlockPoint(newEnd.X, newEnd.Y),
+                                           result.BottomRight,
+                                           result.BottomLeft);
+                }
+
+                if (bottomLineLen != maxLineLen)
+                {
+                    var newBottomLine = (result.BottomLine / result.BottomLine.Length()) * maxLineLen;
+                    var newBottomEnd = new Vector2(result.BottomLeft.X, result.BottomLeft.Y) + newBottomLine;
+                    result = new BlockArea(result.TopLeft,
+                                           result.TopRight,
+                                           new BlockPoint(newBottomEnd.X, newBottomEnd.Y),
+                                           result.BottomLeft);
+                }
+            }
 
             return result;
+        }
+
+        private BlockArea EnsureLeftAlign(BlockArea result)
+        {
+            var leftTopAngle = BlockCoordHelper.RadianAngle(result.TopLine, result.LeftLine);
+
+            var delta = BlockCoordHelper.RIGHT_ANGLE_RADIAN - leftTopAngle;
+            if (Math.Abs(delta) <= BlockCoordHelper.EQUALITY_TOLERANCE)
+                return result;
+
+            var missingLineLen = Math.Abs(BlockCoordHelper.Diff(result.TopLeft, result.BottomLeft).Length()) * Math.Sin(delta);
+            if (delta > 0)
+            {
+                // If TopLeft need to be moved
+                var move = Vector2.Normalize(result.TopLine) * (float)missingLineLen;
+                var targetTopLeft = new BlockPoint(result.TopLeft.X - move.X, result.TopLeft.Y - move.Y);
+                return new BlockArea(targetTopLeft, result.TopRight, result.BottomRight, result.BottomLeft);
+            }
+
+            var moveBottom = Vector2.Normalize(result.BottomLine) * (float)missingLineLen;
+            var targetBottomLeft = new BlockPoint(result.BottomLeft.X + moveBottom.X, result.BottomLeft.Y + moveBottom.Y);
+            return new BlockArea(result.TopLeft, result.TopRight, result.BottomRight, targetBottomLeft);
         }
 
         #endregion

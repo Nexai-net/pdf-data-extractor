@@ -128,10 +128,10 @@ namespace PDF.Data.Extractor.Viewer.Controls
             if (this.DataBlocks == null || this.DataBlocks.Count <= 0)
                 return;
 
-            this._dataBlocksView.AddRange(this.DataBlocks!.Select(d => new PDFDataBlockView(d)));
+            this._dataBlocksView.AddRange(this.DataBlocks!.Select(d => new PDFDataBlockView(d, this)));
 
             foreach (var child in this._dataBlocksView)
-                this.Children.Add(child.Shape);
+                this.Children.Add(child);
         }
 
         /// <summary>
