@@ -99,40 +99,40 @@ namespace PDF.Data.Extractor.Strategies
                                  byte[] imageEncodedBytes,
                                  float width,
                                  float height,
-                                 Point[] drawShapePoints,
+                                 BlockArea area,
                                  IList<CanvasTag> tags)
         {
-            var drawBlockPoints = new List<BlockPoint>();
+            //var drawBlockPoints = new List<BlockPoint>();
 
-            var areaX = 0.0f;
-            var areaY = 0.0f;
-            var areaMaxX = 0.0f;
-            var areaMaxY = 0.0f;
+            //var areaX = 0.0f;
+            //var areaY = 0.0f;
+            //var areaMaxX = 0.0f;
+            //var areaMaxY = 0.0f;
 
-            foreach (var point in drawShapePoints)
-            {
-                var x = (float)point.GetX();
-                var y = (float)point.GetX();
+            //foreach (var point in drawShapePoints)
+            //{
+            //    var x = (float)point.GetX();
+            //    var y = (float)point.GetX();
 
-                drawBlockPoints.Add(new BlockPoint(x, y));
+            //    drawBlockPoints.Add(new BlockPoint(x, y));
 
-                if (x < areaX)
-                    areaX = x;
+            //    if (x < areaX)
+            //        areaX = x;
 
-                if (y < areaY)
-                    areaY = y;
+            //    if (y < areaY)
+            //        areaY = y;
 
-                if (x > areaMaxX)
-                    areaMaxX = x;
+            //    if (x > areaMaxX)
+            //        areaMaxX = x;
 
-                if (y < areaMaxY)
-                    areaMaxY = y;
-            }
+            //    if (y < areaMaxY)
+            //        areaMaxY = y;
+            //}
 
-            var area = new BlockArea(new BlockPoint(areaX, areaY),
-                                     new BlockPoint(areaMaxX, areaY), 
-                                     new BlockPoint(areaMaxX, areaMaxY),
-                                     new BlockPoint(areaX, areaMaxY));
+            //var area = new BlockArea(new BlockPoint(areaX, areaY),
+            //                         new BlockPoint(areaMaxX, areaY), 
+            //                         new BlockPoint(areaMaxX, areaMaxY),
+            //                         new BlockPoint(areaX, areaMaxY));
 
             this._dataBlocks.Add(new DataImageBlock(Guid.NewGuid(),
                                                     imgName.GetValue(),
@@ -141,7 +141,7 @@ namespace PDF.Data.Extractor.Strategies
                                                     width,
                                                     height,
                                                     area,
-                                                    drawBlockPoints,
+                                                    null,
                                                     AnalyzeTags(tags),
                                                     null));
         }

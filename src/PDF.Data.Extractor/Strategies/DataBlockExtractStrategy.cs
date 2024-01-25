@@ -1,6 +1,5 @@
 ﻿namespace PDF.Data.Extractor.Strategies
 {
-    using iText.Forms.Form.Element;
     using iText.Kernel.Geom;
     using iText.Kernel.Pdf;
     using iText.Kernel.Pdf.Canvas.Parser;
@@ -12,8 +11,10 @@
 
     using System;
     using System.Collections.Generic;
-    using System.Collections.ObjectModel;
     using System.Diagnostics;
+    using System.Numerics;
+
+    using Vector = iText.Kernel.Geom.Vector;
 
     /// <summary>
     /// Strategy used to extract pdf <see cref="DataBlock"/>
@@ -23,13 +24,11 @@
     {
         #region Fields
 
-        private const double DEGREE_TO_RADION_RATIO = Math.PI / 180.0f;
-
         private readonly IFontMetaDataInfoExtractStrategy _fontMetaDataInfoExtractStrategy;
         private readonly CancellationToken _token;
         private readonly IReadOnlyDictionary<Type, Action<IEventData>> _dataTypeProcessor;
         private readonly Rectangle _pageSize;
-
+        private readonly PdfPage _page;
         private static readonly ICollection<EventType> s_eventTypeManaged;
 
         private readonly List<DataBlockBuilder> _roots;
@@ -59,10 +58,11 @@
         /// </summary>
         public DataBlockExtractStrategy(IFontMetaDataInfoExtractStrategy fontMetaDataInfoExtractStrategy,
                                         CancellationToken token,
-                                        Rectangle pageSize)
+                                        PdfPage page)
         {
             this._token = token;
-            this._pageSize = pageSize;
+            this._pageSize = page.GetPageSize();
+            this._page = page;
             this._fontMetaDataInfoExtractStrategy = fontMetaDataInfoExtractStrategy;
             this._roots = new List<DataBlockBuilder>();
 
@@ -114,17 +114,16 @@
         /// Creates the <see cref="DataPageBlock"/> from block analyzed
         /// </summary>
         public DataPageBlock Compile(int pageNumber,
-                                     PdfPage page,
                                      CancellationToken token,
                                      params IDataBlockMergeStrategy[] strategies)
         {
-            var pageSize = page.GetPageSizeWithRotation();
+            var pageSize = this._page.GetPageSize();
 
             var pageBlocks = CompileDataBlocks(strategies, token);
 
             return new DataPageBlock(Guid.NewGuid(),
                                      pageNumber,
-                                     page.GetRotation(),
+                                     this._page.GetRotation(),
                                      new BlockArea(new BlockPoint(pageSize.GetLeft(), pageSize.GetTop()),
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetBottom()),
@@ -205,7 +204,6 @@
         private void DataImageBlockExtraction(ImageRenderInfo imgRenderInfo)
         {
             var tags = imgRenderInfo.GetCanvasTagHierarchy();
-            var startPoint = imgRenderInfo.GetStartPoint();
             var imgName = imgRenderInfo.GetImageResourceName();
             var matrix = imgRenderInfo.GetImageCtm();
 
@@ -215,25 +213,35 @@
             var height = img.GetHeight();
             var width = img.GetWidth();
 
-            var x = (double)startPoint.Get(0);
-            var y = (double)startPoint.Get(1);
+            // https://kb.itextpdf.com/itext/how-to-get-the-co-ordinates-of-an-image
+            //var matrixX = matrix.Get(Matrix.I31);
+            //var matrixY = matrix.Get(Matrix.I32);
 
-            var top = new Line(new Point(x, y), new Point(x + width, y));
-            var bottom = new Line(new Point(x, y + height), new Point(x + width, y + height));
+            var matrixWidth = matrix.Get(Matrix.I11);
+            var matrixHeight = matrix.Get(Matrix.I22);
 
-            var topTransformed = ShapeTransformUtil.TransformLine(top, matrix);
-            var bottomTransformed = ShapeTransformUtil.TransformLine(bottom, matrix);
+            var startPoint = imgRenderInfo.GetStartPoint();
 
-            var drawShapePoints = topTransformed.GetBasePoints()
-                                                .Concat(bottomTransformed.GetBasePoints())
-                                                .ToArray();
+            var x = (float)startPoint.Get(0);
+            var y = this._pageSize.GetHeight() - (float)startPoint.Get(1);
+
+            var topLeft = new BlockPoint(x, y - matrixHeight);
+            var topRight = new BlockPoint(x + matrixWidth, y - matrixHeight);
+            var bottomRight = new BlockPoint(x + matrixWidth, y);
+            var bottomLeft = new BlockPoint(x, y);
 
             var needCreateBlock = this._currentBlockBuilder == null;
 
             if (needCreateBlock)
                 EventOccurred(null, EventType.BEGIN_TEXT);
 
-            this._currentBlockBuilder!.AddImageData(imgName, imgType, rawImg, width, height, drawShapePoints, tags);
+            this._currentBlockBuilder!.AddImageData(imgName,
+                                                    imgType,
+                                                    rawImg,
+                                                    width,
+                                                    height,
+                                                    new BlockArea(topLeft, topRight, bottomRight, bottomLeft),
+                                                    tags);
 
             if (needCreateBlock)
                 EventOccurred(null, EventType.END_TEXT);

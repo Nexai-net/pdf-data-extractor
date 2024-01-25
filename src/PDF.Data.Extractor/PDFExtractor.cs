@@ -209,12 +209,11 @@ namespace PDF.Data.Extractor
             {
                 var strategy = new DataBlockExtractStrategy(this._fontMetaDataInfoExtractStrategy,
                                                             token,
-                                                            page.GetPageSize());
+                                                            page);
                 var processor = new PdfCanvasProcessor(strategy);
                 processor.ProcessPageContent(page);
 
                 var pageBlock = strategy.Compile(number,
-                                                 page,
                                                  token,
                                                  mergeStrategies);
                 return pageBlock;
