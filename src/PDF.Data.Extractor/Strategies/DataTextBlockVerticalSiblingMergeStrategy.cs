@@ -120,23 +120,24 @@ namespace PDF.Data.Extractor.Strategies
 
         private BlockArea EnsureLeftAlign(BlockArea result)
         {
-            var leftTopAngle = BlockCoordHelper.RadianAngle(result.TopLine, result.LeftLine);
+            var leftOriginTopAngle = BlockCoordHelper.RadianAngle(result.TopLine, result.LeftLine, true);
+            var leftTopAngle = BlockCoordHelper.RadianAngle(result.TopLine, result.LeftLine, false);
 
             var delta = BlockCoordHelper.RIGHT_ANGLE_RADIAN - leftTopAngle;
             if (Math.Abs(delta) <= BlockCoordHelper.EQUALITY_TOLERANCE)
                 return result;
 
             var missingLineLen = Math.Abs(BlockCoordHelper.Diff(result.TopLeft, result.BottomLeft).Length()) * Math.Sin(delta);
-            if (delta > 0)
+            if (leftTopAngle != leftOriginTopAngle)
             {
                 // If TopLeft need to be moved
                 var move = Vector2.Normalize(result.TopLine) * (float)missingLineLen;
-                var targetTopLeft = new BlockPoint(result.TopLeft.X - move.X, result.TopLeft.Y - move.Y);
+                var targetTopLeft = new BlockPoint(result.TopLeft.X + move.X, result.TopLeft.Y + move.Y);
                 return new BlockArea(targetTopLeft, result.TopRight, result.BottomRight, result.BottomLeft);
             }
 
             var moveBottom = Vector2.Normalize(result.BottomLine) * (float)missingLineLen;
-            var targetBottomLeft = new BlockPoint(result.BottomLeft.X + moveBottom.X, result.BottomLeft.Y + moveBottom.Y);
+            var targetBottomLeft = new BlockPoint(result.BottomLeft.X - moveBottom.X, result.BottomLeft.Y - moveBottom.Y);
             return new BlockArea(result.TopLeft, result.TopRight, result.BottomRight, targetBottomLeft);
         }
 

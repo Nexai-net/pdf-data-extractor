@@ -55,12 +55,18 @@ namespace PDF.Data.Extractor.Abstractions
         /// Radians the angle.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float RadianAngle(Vector2 vectA, Vector2 vectB)
+        public static float RadianAngle(Vector2 vectA, Vector2 vectB, bool matchSin = true)
         {
             var dotProduct = Dot(vectA, vectB);
-            var sin = Math.Asin(dotProduct);
+            var directionFactor = 1;
 
-            return (float)Math.Acos(dotProduct * (sin > 0 ? 1 : -1));
+            if (matchSin)
+            {
+                var sin = Math.Asin(dotProduct);
+                directionFactor = (sin > 0 ? 1 : -1);
+            }
+
+            return (float)Math.Acos(dotProduct * directionFactor);
         }
 
         #endregion
