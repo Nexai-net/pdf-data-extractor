@@ -32,7 +32,6 @@ namespace PDF.Data.Extractor.Viewer.Controls
 
         public static readonly DependencyProperty CornerTopLeftProperty = s_cornerTopLeftPropertyKey.DependencyProperty;
 
-
         private readonly DataBlockViewModel _dataBlock;
         private readonly PDFPageViewer _pageViewer;
 

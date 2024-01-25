@@ -9,7 +9,7 @@ namespace PDF.Data.Extractor.Viewer.Tools
 
     public static class UIDispatchHost
     {
-        private static Dispatcher s_dispatcher;
+        private static Dispatcher? s_dispatcher;
 
         public static void RegisterDispatcher(Dispatcher dispatcher)
         {

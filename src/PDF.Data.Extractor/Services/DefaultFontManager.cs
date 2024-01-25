@@ -2,22 +2,18 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Strategies
+namespace PDF.Data.Extractor.Services
 {
     using iText.IO.Font;
     using iText.Kernel.Font;
-    using iText.Kernel.Pdf;
 
     using PDF.Data.Extractor.Abstractions.MetaData;
-    using PDF.Data.Extractor.Services;
-
-    using System.Diagnostics;
 
     /// <summary>
     /// Default font handler, strategy and manager
     /// </summary>
-    /// <seealso cref="IFontMetaDataInfoExtractStrategy" />
-    public sealed class FontMetaDataInfoExtractStrategy : IDisposable, IFontMetaDataInfoExtractStrategy, IFontManager
+    /// <seealso cref="IFontManager" />
+    public sealed class DefaultFontManager : IDisposable, IFontManager
     {
         #region Fields
 
@@ -27,7 +23,6 @@ namespace PDF.Data.Extractor.Strategies
 
         private readonly Dictionary<string, Dictionary<float, TextFontMetaData>> _cache;
         private readonly Dictionary<Guid, TextFontMetaData> _cacheById;
-        private readonly IFontManager? _overrideFontManager;
         private readonly ReaderWriterLockSlim _locker;
 
         private long _disposeCounter;
@@ -37,29 +32,27 @@ namespace PDF.Data.Extractor.Strategies
         #region Ctor
 
         /// <summary>
-        /// Initializes the <see cref="FontMetaDataInfoExtractStrategy"/> class.
+        /// Initializes the <see cref="DefaultFontManager"/> class.
         /// </summary>
-        static FontMetaDataInfoExtractStrategy()
+        static DefaultFontManager()
         {
             s_testTextFont = new[] { "A", "G", "H", "i", "0", "6", "Q", "P", "p" };
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="FontMetaDataInfoExtractStrategy"/> class.
+        /// Initializes a new instance of the <see cref="DefaultFontManager"/> class.
         /// </summary>
-        public FontMetaDataInfoExtractStrategy(IFontManager? fontManager = null)
+        public DefaultFontManager()
         {
-            this._overrideFontManager = fontManager;
-
             this._locker = new ReaderWriterLockSlim();
             this._cache = new Dictionary<string, Dictionary<float, TextFontMetaData>>(StringComparer.OrdinalIgnoreCase);
             this._cacheById = new Dictionary<Guid, TextFontMetaData>();
         }
 
         /// <summary>
-        /// Finalizes an instance of the <see cref="FontMetaDataInfoExtractStrategy"/> class.
+        /// Finalizes an instance of the <see cref="DefaultFontManager"/> class.
         /// </summary>
-        ~FontMetaDataInfoExtractStrategy()
+        ~DefaultFontManager()
         {
             Dispose(true);
         }
@@ -124,8 +117,8 @@ namespace PDF.Data.Extractor.Strategies
                                                string fontName,
                                                PdfFont font)
         {
-            float minSize = float.MaxValue;
-            float maxSize = float.MinValue;
+            var minSize = float.MaxValue;
+            var maxSize = float.MinValue;
 
             foreach (var c in s_testTextFont)
             {

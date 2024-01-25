@@ -4,6 +4,8 @@
 
 namespace PDF.Data.Extractor.Services
 {
+    using iText.Kernel.Font;
+
     using PDF.Data.Extractor.Abstractions.MetaData;
 
     using System;
@@ -13,6 +15,11 @@ namespace PDF.Data.Extractor.Services
     /// </summary>
     public interface IFontManager
     {
+        /// <summary>
+        /// Return a new <see cref="TextFontMetaData"/> create or get from cache
+        /// </summary>
+        TextFontMetaData AddOrGetFontInfo(float fontSize, PdfFont font);
+
         /// <summary>
         /// Gets <see cref="TextFontMetaData"/> from it's unique id
         /// </summary>

@@ -13,6 +13,18 @@ namespace PDF.Data.Extractor
     /// </summary>
     public sealed class PDFExtractorOptions
     {
+        #region Ctor
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PDFExtractorOptions"/> class.
+        /// </summary>
+        public PDFExtractorOptions()
+        {
+            this.InjectImageMetaData = true;
+        }
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -32,6 +44,11 @@ namespace PDF.Data.Extractor
         /// Gets or sets the override strategies.
         /// </summary>
         public IList<IDataBlockMergeStrategy>? OverrideStrategies { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether.image data must be include in the <see cref="DataDocumentBlock"/>
+        /// </summary>
+        public bool InjectImageMetaData { get; set; }
 
         #endregion
     }

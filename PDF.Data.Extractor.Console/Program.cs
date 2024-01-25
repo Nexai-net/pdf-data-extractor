@@ -23,12 +23,10 @@ var commandLine = parser.ParseArguments<ExtractCommandLineArgument>(args);
 
 if (commandLine.Tag == ParserResultType.NotParsed)
 {
-    var builder = SentenceBuilder.Create();
-    var errors = HelpText.RenderParsingErrorsTextAsLines(commandLine, builder.FormatError, builder.FormatMutuallyExclusiveSetErrors, 0);
-    Console.Error.WriteLine(errors);
+    var usage = HelpText.AutoBuild(commandLine);
 
-    var usage = HelpText.RenderUsageText(commandLine);
-    Console.WriteLine(usage);
+    if (!string.IsNullOrEmpty(usage))
+        Console.WriteLine(usage);
 
     Environment.ExitCode = -1;
     return;
@@ -36,10 +34,11 @@ if (commandLine.Tag == ParserResultType.NotParsed)
 
 using (var docBlockExtractor = new PDFExtractor())
 {
-    var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!, 
+    var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!,
                                                         options: new PDFExtractorOptions()
                                                         {
-                                                            PageRange = Range.StartAt(1)
+                                                            PageRange = Range.StartAt(1),
+                                                            InjectImageMetaData = commandLine.Value.IncludeImages,
                                                         });
 
     var current = new Uri(Directory.GetCurrentDirectory(), UriKind.Absolute);
@@ -62,21 +61,18 @@ using (var docBlockExtractor = new PDFExtractor())
         if (!Directory.Exists(imageFolder))
             Directory.CreateDirectory(imageFolder);
 
-        var saveImageTasks = (docBlock.Children?.OfType<DataPageBlock>() ?? Array.Empty<DataPageBlock>())
-                                      .SelectMany(page => page.Children?.OfType<DataImageBlock>() ?? Array.Empty<DataImageBlock>())
-                                      .Select(block =>
-                                      {
-                                          var bytes = block.ImageEncodedBytesBase64;
+        var images = docBlockExtractor.ImageManager.GetAll();
 
-                                          if (bytes is null || bytes.Length == 0)
-                                              return Task.CompletedTask;
+        var saveImageTasks = images.Select(img =>
+                                   {
+                                       var bytes = img.RawBase64Data;
 
-                                          block.ClearImageBytes();
+                                       if (bytes is null || bytes.Length == 0)
+                                           return Task.CompletedTask;
 
-                                          var raw = Convert.FromBase64String(Encoding.UTF8.GetString(bytes));
-
-                                          return File.WriteAllBytesAsync(Path.Combine(imageFolder, block.Uid + "." + block.ImageType.ToLowerInvariant()), raw);
-                                      }).ToArray();
+                                       var raw = Convert.FromBase64String(Encoding.UTF8.GetString(bytes));
+                                       return File.WriteAllBytesAsync(Path.Combine(imageFolder, img.Uid + "." + img.ImageExtension), raw);
+                                   }).ToArray();
 
         await Task.WhenAll(saveImageTasks);
     }

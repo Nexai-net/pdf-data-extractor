@@ -8,6 +8,7 @@ namespace PDF.Data.Extractor.Strategies
     using iText.Kernel.Geom;
     using iText.Kernel.Pdf;
     using iText.Kernel.Pdf.Canvas;
+    using iText.Layout.Element;
 
     using PDF.Data.Extractor.Abstractions;
     using PDF.Data.Extractor.Abstractions.MetaData;
@@ -95,53 +96,15 @@ namespace PDF.Data.Extractor.Strategies
         /// Adds the image data.
         /// </summary>
         public void AddImageData(PdfName imgName,
-                                 ImageType imgType,
-                                 byte[] imageEncodedBytes,
-                                 float width,
-                                 float height,
+                                 ImageMetaData image,
                                  BlockArea area,
                                  IList<CanvasTag> tags)
         {
-            //var drawBlockPoints = new List<BlockPoint>();
-
-            //var areaX = 0.0f;
-            //var areaY = 0.0f;
-            //var areaMaxX = 0.0f;
-            //var areaMaxY = 0.0f;
-
-            //foreach (var point in drawShapePoints)
-            //{
-            //    var x = (float)point.GetX();
-            //    var y = (float)point.GetX();
-
-            //    drawBlockPoints.Add(new BlockPoint(x, y));
-
-            //    if (x < areaX)
-            //        areaX = x;
-
-            //    if (y < areaY)
-            //        areaY = y;
-
-            //    if (x > areaMaxX)
-            //        areaMaxX = x;
-
-            //    if (y < areaMaxY)
-            //        areaMaxY = y;
-            //}
-
-            //var area = new BlockArea(new BlockPoint(areaX, areaY),
-            //                         new BlockPoint(areaMaxX, areaY), 
-            //                         new BlockPoint(areaMaxX, areaMaxY),
-            //                         new BlockPoint(areaX, areaMaxY));
-
+            
             this._dataBlocks.Add(new DataImageBlock(Guid.NewGuid(),
                                                     imgName.GetValue(),
-                                                    ConvertImageType(imgType),
-                                                    Encoding.UTF8.GetBytes(Convert.ToBase64String(imageEncodedBytes, Base64FormattingOptions.None)),
-                                                    width,
-                                                    height,
+                                                    image.Uid,
                                                     area,
-                                                    null,
                                                     AnalyzeTags(tags),
                                                     null));
         }

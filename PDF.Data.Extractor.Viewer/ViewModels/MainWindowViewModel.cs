@@ -9,6 +9,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
     using Microsoft.Win32;
 
+    using PDF.Data.Extractor.Abstractions;
     using PDF.Data.Extractor.Services;
     using PDF.Data.Extractor.Viewer.Models;
     using PDF.Data.Extractor.Viewer.Tools;
@@ -34,11 +35,13 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         private string? _pdfFilePath;
         private long _workingCounter;
         private PdfPageInfo? _currentPage;
+#pragma warning disable IDE0032 // Use auto property
         private IronPdf.PdfDocument? _ironDocument;
+#pragma warning restore IDE0032 // Use auto property
         private iText.Kernel.Pdf.PdfDocument? _document;
         private PdfReader? _docReader;
         private int _displayPage;
-        private IReadOnlyCollection<DataBlockViewModel> _dataBlocks;
+        private IReadOnlyCollection<DataBlockViewModel>? _dataBlocks;
         private bool _autoAnalyzeWhenChangePage;
         private readonly AsyncDelegateCommand _analyzeCommand;
 
@@ -78,13 +81,11 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
         public ICommand AnalyzeCommand { get; set; }
 
-
         public ICommand NextPageCommand { get; set; }
-
 
         public ICommand PrevPageCommand { get; set; }
 
-        public string PdfFilePath
+        public string? PdfFilePath
         {
             get { return this._pdfFilePath; }
             private set { SetProperty(ref this._pdfFilePath, value); }
@@ -93,7 +94,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         /// <summary>
         /// Gets the page.
         /// </summary>
-        public PdfPageInfo Page
+        public PdfPageInfo? Page
         {
             get { return this._currentPage; }
             private set { SetProperty(ref this._currentPage, value); }
@@ -102,7 +103,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         /// <summary>
         /// 
         /// </summary>
-        public IronPdf.PdfDocument PdfDocument
+        public IronPdf.PdfDocument? PdfDocument
         {
             get { return this._ironDocument; }
         }
@@ -133,7 +134,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
             }
         }
 
-        public IReadOnlyCollection<DataBlockViewModel> DataBlocks
+        public IReadOnlyCollection<DataBlockViewModel>? DataBlocks
         {
             get { return this._dataBlocks; }
             private set { SetProperty(ref this._dataBlocks, value); }
@@ -162,9 +163,9 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                                                                       PageRange = new Range(this.DisplayPage - 1, this.DisplayPage)
                                                                   });
 
-                    this.DataBlocks = analyzeDoc.Children
+                    this.DataBlocks = ((analyzeDoc.Children ?? Array.Empty<DataBlock>())
                                                 .FirstOrDefault()
-                                                ?.Children
+                                                ?.Children ?? Array.Empty<DataBlock>())
                                                  .Select(b => new DataBlockViewModel(b))
                                                  .ToArray() ?? Array.Empty<DataBlockViewModel>();
                 }
@@ -185,10 +186,12 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
             RefreshViewModelState();
             try
             {
-                var openFileDialog = new OpenFileDialog();
-                openFileDialog.CheckFileExists = true;
-                openFileDialog.Filter = "PDF file (*.pdf) | *.pdf";
-                openFileDialog.Multiselect = false;
+                var openFileDialog = new OpenFileDialog
+                {
+                    CheckFileExists = true,
+                    Filter = "PDF file (*.pdf) | *.pdf",
+                    Multiselect = false
+                };
 
                 if (openFileDialog.ShowDialog() == true)
                 {

@@ -96,7 +96,7 @@ namespace PDF.Data.Extractor.Strategies
 
                 if (topLineLen != maxLineLen)
                 {
-                    var newTopLine = (result.TopLine / result.TopLine.Length()) * maxLineLen;
+                    var newTopLine = result.TopLine / result.TopLine.Length() * maxLineLen;
                     var newEnd = new Vector2(result.TopLeft.X, result.TopLeft.Y) + newTopLine;
                     result = new BlockArea(result.TopLeft,
                                            new BlockPoint(newEnd.X, newEnd.Y),
@@ -106,7 +106,7 @@ namespace PDF.Data.Extractor.Strategies
 
                 if (bottomLineLen != maxLineLen)
                 {
-                    var newBottomLine = (result.BottomLine / result.BottomLine.Length()) * maxLineLen;
+                    var newBottomLine = result.BottomLine / result.BottomLine.Length() * maxLineLen;
                     var newBottomEnd = new Vector2(result.BottomLeft.X, result.BottomLeft.Y) + newBottomLine;
                     result = new BlockArea(result.TopLeft,
                                            result.TopRight,

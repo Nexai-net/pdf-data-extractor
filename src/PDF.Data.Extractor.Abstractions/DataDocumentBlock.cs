@@ -33,7 +33,8 @@ namespace PDF.Data.Extractor.Abstractions
                                  string producer,
                                  string subject,
                                  string title,
-                                 IEnumerable<TextFontMetaData> fonts)
+                                 IEnumerable<TextFontMetaData>? fonts,
+                                 IEnumerable<ImageMetaData>? images)
             : base(uid, BlockTypeEnum.Document, area, null, children)
         {
             this.FileName = fileName;
@@ -44,6 +45,7 @@ namespace PDF.Data.Extractor.Abstractions
             this.subject = subject;
             this.Title = title;
             this.Fonts = fonts?.ToArray() ?? Array.Empty<TextFontMetaData>();
+            this.Images = images?.ToArray() ?? Array.Empty<ImageMetaData>();
         }
 
         #endregion
@@ -97,6 +99,12 @@ namespace PDF.Data.Extractor.Abstractions
         /// </summary>
         [DataMember]
         public IReadOnlyCollection<TextFontMetaData> Fonts { get; }
+
+        /// <summary>
+        /// Gets the images resources
+        /// </summary>
+        [DataMember]
+        public IReadOnlyCollection<ImageMetaData> Images { get; }
 
         #endregion
     }

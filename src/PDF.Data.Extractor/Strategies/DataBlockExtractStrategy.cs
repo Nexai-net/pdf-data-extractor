@@ -24,11 +24,14 @@
     {
         #region Fields
 
-        private readonly IFontMetaDataInfoExtractStrategy _fontMetaDataInfoExtractStrategy;
+        private readonly IImageManager _imageManager;
+        private readonly IFontManager _fontManager;
+
         private readonly CancellationToken _token;
         private readonly IReadOnlyDictionary<Type, Action<IEventData>> _dataTypeProcessor;
         private readonly Rectangle _pageSize;
         private readonly PdfPage _page;
+        
         private static readonly ICollection<EventType> s_eventTypeManaged;
 
         private readonly List<DataBlockBuilder> _roots;
@@ -56,14 +59,16 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="DataBlockExtractStrategy"/> class.
         /// </summary>
-        public DataBlockExtractStrategy(IFontMetaDataInfoExtractStrategy fontMetaDataInfoExtractStrategy,
+        public DataBlockExtractStrategy(IFontManager fontManager,
+                                        IImageManager imageManager,
                                         CancellationToken token,
                                         PdfPage page)
         {
             this._token = token;
             this._pageSize = page.GetPageSize();
             this._page = page;
-            this._fontMetaDataInfoExtractStrategy = fontMetaDataInfoExtractStrategy;
+            this._fontManager = fontManager;
+            this._imageManager = imageManager;
             this._roots = new List<DataBlockBuilder>();
 
             this._dataTypeProcessor = new Dictionary<Type, Action<IEventData>>()
@@ -128,7 +133,7 @@
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetBottom()),
                                                    new BlockPoint(pageSize.GetLeft(), pageSize.GetBottom())),
-                                     null, // TODO : Relation Not comput now
+                                     null, // TODO : Relation Not compute now
                                      pageBlocks);
         }
 
@@ -180,7 +185,7 @@
             var location = charact.GetLocation();
             var magnitude = location.OrientationMagnitude();
 
-            var fontInfo = this._fontMetaDataInfoExtractStrategy.AddOrGetFontInfo(fontSize, font);
+            var fontInfo = this._fontManager.AddOrGetFontInfo(fontSize, font);
 
             Debug.Assert(this._currentBlockBuilder != null);
             this._currentBlockBuilder.AddTextData(actualTxtStr,
@@ -233,18 +238,21 @@
             var needCreateBlock = this._currentBlockBuilder == null;
 
             if (needCreateBlock)
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 EventOccurred(null, EventType.BEGIN_TEXT);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+
+            var metaData = this._imageManager.AddImageResource(img);
 
             this._currentBlockBuilder!.AddImageData(imgName,
-                                                    imgType,
-                                                    rawImg,
-                                                    width,
-                                                    height,
+                                                    metaData,
                                                     new BlockArea(topLeft, topRight, bottomRight, bottomLeft),
                                                     tags);
 
             if (needCreateBlock)
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 EventOccurred(null, EventType.END_TEXT);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             this._token.ThrowIfCancellationRequested();
         }

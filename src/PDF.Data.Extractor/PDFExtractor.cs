@@ -4,8 +4,8 @@
 
 namespace PDF.Data.Extractor
 {
-    using iText.Kernel.Pdf.Canvas.Parser;
     using iText.Kernel.Pdf;
+    using iText.Kernel.Pdf.Canvas.Parser;
 
     using PDF.Data.Extractor.Abstractions;
     using PDF.Data.Extractor.Services;
@@ -14,10 +14,7 @@ namespace PDF.Data.Extractor
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
     using System.Threading.Tasks;
-    using iText.Kernel.Pdf.Canvas;
-    using iText.Kernel.Pdf.Xobject;
 
     /// <summary>
     /// Extract all information and format them in <see cref="DataBlock"/> structure
@@ -26,9 +23,7 @@ namespace PDF.Data.Extractor
     {
         #region Fields
 
-        private readonly IFontMetaDataInfoExtractStrategy _fontMetaDataInfoExtractStrategy;
         private readonly IDataBlockMergeStrategy[] _defaultMergeStrategies;
-        private readonly IFontManager _fontManager;
 
         private readonly CancellationTokenSource _lifetimeCancellationToken;
         private readonly SemaphoreSlim _simulaniousAnalyzeLocker;
@@ -43,23 +38,18 @@ namespace PDF.Data.Extractor
         /// </summary>
         /// <param name="maxSimulaniousParallelAnalyze">Minimum 2</param>
         public PDFExtractor(IEnumerable<IDataBlockMergeStrategy>? dataBlockMergeStrategies = null,
-                            IFontMetaDataInfoExtractStrategy? fontMetaDataInfoExtractStrategy = null,
                             IFontManager? fontManager = null,
+                            IImageManager? imageManager = null,
                             uint maxSimulaniousParallelAnalyze = 42)
         {
-            FontMetaDataInfoExtractStrategy? defaultFontMetaDataInfoExtractStrategy = null;
-
-            if (fontManager == null || fontMetaDataInfoExtractStrategy == null)
-                defaultFontMetaDataInfoExtractStrategy = new FontMetaDataInfoExtractStrategy(fontManager);
-
-            this._fontManager = fontManager ?? defaultFontMetaDataInfoExtractStrategy!;
-            this._fontMetaDataInfoExtractStrategy = fontMetaDataInfoExtractStrategy ?? defaultFontMetaDataInfoExtractStrategy!;
+            this.FontManager = fontManager ?? new DefaultFontManager();
+            this.ImageManager = imageManager ?? new DefaultImageManager();
 
             this._defaultMergeStrategies = dataBlockMergeStrategies?.ToArray() ?? new IDataBlockMergeStrategy[]
             {
-                new DataTextBlockHorizontalSiblingMergeStrategy(this._fontManager),
-                new DataTextBlockVerticalSiblingMergeStrategy(this._fontManager, alignRight: false),
-                new DataTextBlockVerticalSiblingMergeStrategy(this._fontManager, alignRight: true)
+                new DataTextBlockHorizontalSiblingMergeStrategy(this.FontManager),
+                new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: false),
+                new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: true)
                             // Align by center
             };
 
@@ -74,6 +64,20 @@ namespace PDF.Data.Extractor
         {
             Dispose(true);
         }
+
+        #endregion
+
+        #region Property$
+
+        /// <summary>
+        /// Gets the font manager.
+        /// </summary>
+        public IFontManager FontManager { get; }
+
+        /// <summary>
+        /// Gets the image manager.
+        /// </summary>
+        public IImageManager ImageManager { get; }
 
         #endregion
 
@@ -180,7 +184,8 @@ namespace PDF.Data.Extractor
                                                      docInfo.GetProducer(),
                                                      docInfo.GetSubject(),
                                                      docInfo.GetTitle(),
-                                                     this._fontManager.GetAll());
+                                                     this.FontManager.GetAll(),
+                                                     (options?.InjectImageMetaData ?? true) ? this.ImageManager.GetAll() : null);
 
                 return docBlock;
             }
@@ -207,9 +212,11 @@ namespace PDF.Data.Extractor
 
             try
             {
-                var strategy = new DataBlockExtractStrategy(this._fontMetaDataInfoExtractStrategy,
+                var strategy = new DataBlockExtractStrategy(this.FontManager,
+                                                            this.ImageManager,
                                                             token,
                                                             page);
+
                 var processor = new PdfCanvasProcessor(strategy);
                 processor.ProcessPageContent(page);
 
@@ -236,10 +243,10 @@ namespace PDF.Data.Extractor
 
             if (!fromFinalizer)
             {
-                if (this._fontManager is IDisposable disposableFontManager)
+                if (this.FontManager is IDisposable disposableFontManager)
                     disposableFontManager.Dispose();
 
-                if (this._fontMetaDataInfoExtractStrategy is IDisposable disposableFontMetaData)
+                if (this.FontManager is IDisposable disposableFontMetaData)
                     disposableFontMetaData.Dispose();
             }
         }
