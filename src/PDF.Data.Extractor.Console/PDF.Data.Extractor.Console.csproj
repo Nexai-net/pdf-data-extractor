@@ -12,8 +12,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\src\PDF.Data.Extractor.Abstractions\PDF.Data.Extractor.Abstractions.csproj" />
-	  <ProjectReference Include="..\src\PDF.Data.Extractor\PDF.Data.Extractor.csproj" />
+	  <ProjectReference Include="..\PDF.Data.Extractor.Abstractions\PDF.Data.Extractor.Abstractions.csproj" />
+	  <ProjectReference Include="..\PDF.Data.Extractor\PDF.Data.Extractor.csproj" />
 	</ItemGroup>
 
 </Project>
