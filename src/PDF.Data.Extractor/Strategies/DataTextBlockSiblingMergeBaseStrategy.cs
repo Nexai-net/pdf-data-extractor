@@ -69,7 +69,6 @@ namespace PDF.Data.Extractor.Strategies
                                        ValidateCanMerge,
 
                                        (source, sourceFont, target) => new DataTextBlock(Guid.NewGuid(),
-                                                                                         MergeText(source.Text, target.Text),
                                                                                          source.FontLevel,
                                                                                          source.PointValue,
                                                                                          source.LineSize,
@@ -79,7 +78,11 @@ namespace PDF.Data.Extractor.Strategies
                                                                                          source.FontInfoUid,
                                                                                          source.SpaceWidth,
                                                                                          MergeArea(source.Area, target.Area),
-                                                                                         source.TextBoxId,
+                                                                                         
+                                                                                         (source.TextBoxIds ?? Array.Empty<float>())
+                                                                                            .Concat(target.TextBoxIds ?? Array.Empty<float>())
+                                                                                            .Distinct(),
+
                                                                                          MergeTags(source.Tags, target.Tags),
                                                                                          MergeChildren(source.Children, target.Children)),
                                        token);

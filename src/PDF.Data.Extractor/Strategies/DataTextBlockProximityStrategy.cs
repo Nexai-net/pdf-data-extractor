@@ -20,6 +20,9 @@ namespace PDF.Data.Extractor.Strategies
     {
         #region Fields
 
+        private const double DIST_TOLERANCE_PERCENT_HORIZONTAL = 1.02;
+        private const double DIST_TOLERANCE_PERCENT_VERTICAL = 1.08;
+
         private static readonly Queue<DataTextBlockGroup> s_groupPool;
         private static readonly SemaphoreSlim s_locker;
 
@@ -53,7 +56,7 @@ namespace PDF.Data.Extractor.Strategies
                 int indx = 0;
                 foreach (var data in dataBlocks)
                 {
-                    var grp = grps[indx++];
+                    var grp = grps[indx];
                     grp.Push(data);
                     indx++;
                 }
@@ -68,6 +71,9 @@ namespace PDF.Data.Extractor.Strategies
                             continue;
 
                         var other = grps[inGrpIndx];
+
+                        if (current.Uid == other.Uid)
+                            continue;
 
                         if (CanMerge(current, other))
                         {
@@ -98,7 +104,44 @@ namespace PDF.Data.Extractor.Strategies
         /// </summary>
         private bool CanMerge(DataTextBlockGroup current, DataTextBlockGroup other)
         {
-            throw new NotImplementedException();
+            if (current.TextBoxIds is not null && other.TextBoxIds is not null &&
+                current.TextBoxIds.SequenceEqual(other.TextBoxIds))
+            {
+                return true;
+            }
+
+            if (current.Magnitude != other.Magnitude || current.FontUid != other.FontUid || current.LineSize != other.LineSize)
+                return false;
+
+            var centerDiff = other.Center - current.Center;
+            var distLength = Math.Abs(centerDiff.Length());
+
+            var angle = BlockCoordHelper.RadianAngle(current.TopLine, other.TopLine);
+
+            if (Math.Abs(angle) > BlockCoordHelper.ALIGN_MAGNITUDE_TOLERANCE)
+                return false;
+
+            var horizontalTestAngleRad = BlockCoordHelper.RadianAngle(current.TopLine, centerDiff);
+            var verticalTestAngleRad = BlockCoordHelper.RadianAngle(current.LeftLine, centerDiff);
+
+            bool isHorizontalCompare = (horizontalTestAngleRad < verticalTestAngleRad);
+
+            if (isHorizontalCompare)
+            {
+                if (!current.IsInHorizontalLimit(other))
+                    return false;
+
+                var projectPointOnHorizontalLenght = Math.Cos(horizontalTestAngleRad) * distLength;
+
+                return Math.Abs(projectPointOnHorizontalLenght) < (current.HalfTopLineLength + other.HalfTopLineLength) * DIST_TOLERANCE_PERCENT_HORIZONTAL;
+            }
+
+            if (!current.IsInVerticalLimit(other))
+                return false;
+
+            var projectPointOnVerticalLenght = Math.Cos(verticalTestAngleRad) * distLength;
+            return Math.Abs(projectPointOnVerticalLenght) < (current.HalfLeftLineLength + other.HalfLeftLineLength) * DIST_TOLERANCE_PERCENT_VERTICAL;
+
         }
 
         /// <summary>

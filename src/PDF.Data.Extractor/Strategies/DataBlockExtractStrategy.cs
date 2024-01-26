@@ -188,8 +188,7 @@
             var fontInfo = this._fontManager.AddOrGetFontInfo(fontSize, font);
 
             Debug.Assert(this._currentBlockBuilder != null);
-            this._currentBlockBuilder.AddTextData(actualTxtStr,
-                                                  fontSize,
+            this._currentBlockBuilder.AddTextData(fontSize,
                                                   sizeAdjusted,
                                                   fontInfo,
                                                   txt.GetSingleSpaceWidth(),
@@ -200,6 +199,7 @@
                                                   text,
                                                   txt.GetMcid(),
                                                   tags);
+
             this._token.ThrowIfCancellationRequested();
         }
 

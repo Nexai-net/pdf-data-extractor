@@ -23,7 +23,6 @@ namespace PDF.Data.Extractor.Abstractions
         /// Initializes a new instance of the <see cref="DataTextBlock"/> class.
         /// </summary>
         public DataTextBlock(Guid uid,
-                             string? actualText,
                              float fontLevel,
                              float pointValue,
                              float ligneSize,
@@ -33,12 +32,11 @@ namespace PDF.Data.Extractor.Abstractions
                              Guid fontInfoUid,
                              float spaceWidth,
                              BlockArea area,
-                             float textBoxId,
-                             IEnumerable<DataTag> tags,
+                             IEnumerable<float>? textBoxId,
+                             IEnumerable<DataTag>? tags,
                              IEnumerable<DataBlock>? children) 
             : base(uid, BlockTypeEnum.Text, area, tags, children)
         {
-            this.ActualText = actualText;
             this.LineSize = ligneSize;
             this.FontLevel = fontLevel;
             this.PointValue = pointValue;
@@ -47,18 +45,12 @@ namespace PDF.Data.Extractor.Abstractions
             this.Magnitude = magnitude;
             this.FontInfoUid = fontInfoUid;
             this.SpaceWidth = spaceWidth;
-            this.TextBoxId = textBoxId;
+            this.TextBoxIds = textBoxId?.ToArray();
         }
 
         #endregion
 
         #region Properties
-
-        /// <summary>
-        /// Gets the actual text.
-        /// </summary>
-        [DataMember]
-        public string? ActualText { get; }
 
         /// <summary>
         /// Gets the size of the ligne.
@@ -111,7 +103,8 @@ namespace PDF.Data.Extractor.Abstractions
         /// <summary>
         /// Gets the text box identifier.
         /// </summary>
-        public float TextBoxId { get; }
+        [DataMember(EmitDefaultValue = false)]
+        public IReadOnlyCollection<float>? TextBoxIds { get; }
 
         #endregion
     }

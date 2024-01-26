@@ -63,8 +63,7 @@ namespace PDF.Data.Extractor.Strategies
         /// <summary>
         /// Adds the text data.
         /// </summary>
-        public void AddTextData(string? actualTxtStr,
-                                float fontSize,
+        public void AddTextData(float fontSize,
                                 float pointValue,
                                 TextFontMetaData fontInfo,
                                 float spaceWidth,
@@ -77,7 +76,6 @@ namespace PDF.Data.Extractor.Strategies
                                 IEnumerable<CanvasTag> tags)
         {
             this._dataBlocks.Add(new DataTextBlock(Guid.NewGuid(),
-                                                   actualTxtStr,
                                                    fontSize,
                                                    pointValue,
                                                    ligneSize,
@@ -87,7 +85,7 @@ namespace PDF.Data.Extractor.Strategies
                                                    fontInfo.Uid,
                                                    spaceWidth,
                                                    area,
-                                                   textBoxId,
+                                                   new[] { textBoxId },
                                                    AnalyzeTags(tags),
                                                    null));
         }

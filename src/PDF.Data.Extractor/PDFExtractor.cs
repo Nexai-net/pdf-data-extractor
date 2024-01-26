@@ -47,9 +47,11 @@ namespace PDF.Data.Extractor
 
             this._defaultMergeStrategies = dataBlockMergeStrategies?.ToArray() ?? new IDataBlockMergeStrategy[]
             {
-                new DataTextBlockHorizontalSiblingMergeStrategy(this.FontManager),
-                new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: false),
-                new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: true)
+                //new DataTextBlockHorizontalSiblingMergeStrategy(this.FontManager),
+                //new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: false),
+                //new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: true)
+
+                new DataTextBlockProximityStrategy()
                             // Align by center
             };
 
