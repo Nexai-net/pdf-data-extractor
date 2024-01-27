@@ -21,7 +21,7 @@ namespace PDF.Data.Extractor.Abstractions
     [JsonDerivedType(typeof(DataPageBlock), "page")]
     [JsonDerivedType(typeof(DataDocumentBlock), "document")]
     [JsonDerivedType(typeof(DataRelationBlock), "relation")]
-    public abstract class DataBlock
+    public abstract class DataBlock : IDataBlock
     {
         #region Ctor
 

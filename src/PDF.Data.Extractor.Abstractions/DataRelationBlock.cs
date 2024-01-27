@@ -22,7 +22,7 @@ namespace PDF.Data.Extractor.Abstractions
                                  BlockArea area,
                                  BlockRelationTypeEnum blockRelationType,
                                  IEnumerable<Guid>? blocksContained)
-            : base(uid, BlockTypeEnum.Column, area, null, null)
+            : base(uid, BlockTypeEnum.Relation, area, null, null)
         {
             this.BlocksContained = blocksContained?.ToArray();
             this.BlockRelationType = blockRelationType;

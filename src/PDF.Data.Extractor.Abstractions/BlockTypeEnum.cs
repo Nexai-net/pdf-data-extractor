@@ -12,7 +12,7 @@ namespace PDF.Data.Extractor.Abstractions
         None,
         Text,
         Image,
-        Column,
+        Relation,
         Document,
         Page
     }

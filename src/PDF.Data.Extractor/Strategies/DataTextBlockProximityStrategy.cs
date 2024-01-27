@@ -16,15 +16,20 @@ namespace PDF.Data.Extractor.Strategies
     /// Merge strategy using compostion through block proximity
     /// </summary>
     /// <seealso cref="DataBlockMergeBaseStrategy{DataTextBlock}" />
-    public sealed class DataTextBlockProximityStrategy : DataBlockMergeBaseStrategy<DataTextBlock>
+    public sealed class DataTextBlockProximityStrategy : DataBlockMergeBaseStrategy<IDataTextBlock>
     {
         #region Fields
 
-        private const double DIST_TOLERANCE_PERCENT_HORIZONTAL = 1.02;
-        private const double DIST_TOLERANCE_PERCENT_VERTICAL = 1.08;
+        private const float DIST_TOLERANCE_PERCENT_HORIZONTAL = 1.02f;
+        private const float DIST_TOLERANCE_PERCENT_VERTICAL = 1.08f;
 
         private static readonly Queue<DataTextBlockGroup> s_groupPool;
         private static readonly SemaphoreSlim s_locker;
+
+        private readonly bool _compareFontInfo;
+        private readonly float _verticalDistanceTolerance;
+        private readonly float _horizontalDistanceTolerance;
+        private readonly Func<DataTextBlockGroup, IDataBlock>? _customCompile;
 
         #endregion
 
@@ -39,12 +44,26 @@ namespace PDF.Data.Extractor.Strategies
             s_locker = new SemaphoreSlim(1);
         }
 
+        /// <summary>
+        /// Instanciate a new instance of the class <see cref="DataTextBlockProximityStrategy"/>
+        /// </summary>
+        public DataTextBlockProximityStrategy(bool compareFontInfo = true,
+                                              Func<DataTextBlockGroup, IDataBlock>? customCompile = null,
+                                              float verticalDistanceTolerance = DIST_TOLERANCE_PERCENT_VERTICAL,
+                                              float horizontalDistanceTolerance = DIST_TOLERANCE_PERCENT_HORIZONTAL)
+        {
+            this._compareFontInfo = compareFontInfo;
+            this._customCompile = customCompile;
+            this._verticalDistanceTolerance = verticalDistanceTolerance;
+            this._horizontalDistanceTolerance = horizontalDistanceTolerance;
+        }
+
         #endregion
 
         #region Methods
 
         /// <inheritdoc />
-        protected override IReadOnlyCollection<DataBlock> Merge(IEnumerable<DataTextBlock> dataBlocks, CancellationToken token)
+        protected override IReadOnlyCollection<IDataBlock> Merge(IEnumerable<IDataTextBlock> dataBlocks, CancellationToken token)
         {
             if (dataBlocks == null || dataBlocks.Count() < 2)
                 return dataBlocks?.Cast<DataBlock>().ToArray() ?? Array.Empty<DataBlock>();
@@ -86,7 +105,7 @@ namespace PDF.Data.Extractor.Strategies
                     }
                 }
 
-                var blocks = grps.Select(g => g.Compile())
+                var blocks = grps.Select(g => this._customCompile?.Invoke(g) ?? g.Compile())
                                  .ToArray();
                 return blocks;
             }
@@ -94,7 +113,6 @@ namespace PDF.Data.Extractor.Strategies
             {
                 ReleaseItems(grps.ToArray());
             }
-
         }
 
         #region Tools
@@ -110,7 +128,7 @@ namespace PDF.Data.Extractor.Strategies
                 return true;
             }
 
-            if (current.Magnitude != other.Magnitude || current.FontUid != other.FontUid || current.LineSize != other.LineSize)
+            if (this._compareFontInfo && (current.Magnitude != other.Magnitude || current.FontUid != other.FontUid || current.LineSize != other.LineSize))
                 return false;
 
             var centerDiff = other.Center - current.Center;
@@ -128,19 +146,19 @@ namespace PDF.Data.Extractor.Strategies
 
             if (isHorizontalCompare)
             {
-                if (!current.IsInHorizontalLimit(other))
+                if (this._horizontalDistanceTolerance == 0 || !current.IsInHorizontalLimit(other))
                     return false;
 
                 var projectPointOnHorizontalLenght = Math.Cos(horizontalTestAngleRad) * distLength;
 
-                return Math.Abs(projectPointOnHorizontalLenght) < (current.HalfTopLineLength + other.HalfTopLineLength) * DIST_TOLERANCE_PERCENT_HORIZONTAL;
+                return Math.Abs(projectPointOnHorizontalLenght) < (current.HalfTopLineLength + other.HalfTopLineLength + (current.SpaceWidth * this._horizontalDistanceTolerance));
             }
 
-            if (!current.IsInVerticalLimit(other))
+            if (this._verticalDistanceTolerance == 0 || !current.IsInVerticalLimit(other))
                 return false;
 
             var projectPointOnVerticalLenght = Math.Cos(verticalTestAngleRad) * distLength;
-            return Math.Abs(projectPointOnVerticalLenght) < (current.HalfLeftLineLength + other.HalfLeftLineLength) * DIST_TOLERANCE_PERCENT_VERTICAL;
+            return Math.Abs(projectPointOnVerticalLenght) < (current.HalfLeftLineLength + other.HalfLeftLineLength + (current.LineSize * this._verticalDistanceTolerance));
 
         }
 

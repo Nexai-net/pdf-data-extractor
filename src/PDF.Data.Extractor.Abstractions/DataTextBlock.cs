@@ -15,7 +15,7 @@ namespace PDF.Data.Extractor.Abstractions
     /// </summary>
     [DataContract]
     [DebuggerDisplay("{Text}")]
-    public sealed class DataTextBlock : DataBlock
+    public sealed class DataTextBlock : DataBlock, IDataTextBlock
     {
         #region Ctor
 

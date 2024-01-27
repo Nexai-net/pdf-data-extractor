@@ -18,11 +18,14 @@ namespace PDF.Data.Extractor
     {
         #region Properties
 
-        private readonly List<DataTextBlock> _blocks;
-        private DataTextBlock? _referentialBlock;
+        private readonly List<IDataTextBlock> _blocks;
+        private IReadOnlyCollection<DataTag>? _tags;
+
+        private IDataTextBlock? _referentialBlock;
 
         private long _using;
         private float _midLineSize;
+
 
         private BlockPoint? _topLeftOriginPoint;
         private Vector2? _topLeftOriginPointVect;
@@ -49,7 +52,9 @@ namespace PDF.Data.Extractor
         /// </summary>
         public DataTextBlockGroup()
         {
-            this._blocks = new List<DataTextBlock>();
+            this._blocks = new List<IDataTextBlock>();
+            this._tags = new List<DataTag>();
+
             this.Uid = Guid.NewGuid();
         }
 
@@ -83,6 +88,11 @@ namespace PDF.Data.Extractor
         public float LineSize { get; private set; }
 
         /// <summary>
+        /// Gets the width of the space.
+        /// </summary>
+        public float SpaceWidth { get; private set; }
+
+        /// <summary>
         /// Gets the top line.
         /// </summary>
         public Vector2 TopLine { get; private set; }
@@ -91,7 +101,6 @@ namespace PDF.Data.Extractor
         /// Gets the length of the top line
         /// </summary>
         public float TopLineLength { get; private set; }
-
 
         /// <summary>
         /// Gets the length of the top line / 2
@@ -165,7 +174,7 @@ namespace PDF.Data.Extractor
         /// <summary>
         /// Pushes the data block.
         /// </summary>
-        public void Push(DataTextBlock data)
+        public void Push(IDataTextBlock data)
         {
             PushDataImpl(data);
             UpdateGroupInfo();
@@ -176,7 +185,7 @@ namespace PDF.Data.Extractor
         /// </summary>
         public void Consume(DataTextBlockGroup other)
         {
-            if (other == null || other._blocks.Count == 0) 
+            if (other == null || other._blocks.Count == 0)
                 return;
 
             foreach (var b in other._blocks)
@@ -188,27 +197,27 @@ namespace PDF.Data.Extractor
         /// <summary>
         /// Compiles this instance into <see cref="DataTextBlock"/>
         /// </summary>
-        public DataTextBlock Compile()
+        public IDataTextBlock Compile()
         {
             var blocks = GetBlockOrderByRelativeCoord();
 
             if (blocks.Count == 0 || blocks.Count == 1)
                 return blocks.FirstOrDefault().Block;
 
-            var tags = new List<DataTag>();
             var sb = new StringBuilder();
 
-            float lastX = float.MinValue;
+            float? lastY = null;
             foreach (var block in blocks)
             {
-                if (block.RelArea.TopLeft.X < lastX)
-                    sb.AppendLine();
+                if (lastY is not null)
+                {
+                    var yDiff = block.RelArea.TopLeft.Y - lastY;
+                    if (yDiff > 0 && yDiff > (this.LineSize / 2.0f))
+                        sb.AppendLine();
+                }
 
-                lastX = block.RelArea.TopLeft.X;
+                lastY = block.RelArea.TopLeft.Y;
                 sb.Append(block.Block.Text);
-
-                if (block.Block.Tags != null && block.Block.Tags.Count > 0)
-                    tags.AddRange(block.Block.Tags);
             }
 
             return new DataTextBlock(Guid.NewGuid(),
@@ -219,13 +228,10 @@ namespace PDF.Data.Extractor
                                      this.Magnitude,
                                      sb.ToString(),
                                      this._referentialBlock!.FontInfoUid,
-                                     this._referentialBlock!.SpaceWidth,
-                                     new BlockArea(new BlockPoint(this._topLeftWorld.X, this._topLeftWorld.Y),
-                                                   new BlockPoint(this._topRightWorld.X, this._topRightWorld.Y),
-                                                   new BlockPoint(this._bottomRightWorld.X, this._bottomRightWorld.Y),
-                                                   new BlockPoint(this._bottomLeftWorld.X, this._bottomLeftWorld.Y)),
-                                     this.TextBoxIds.Any() ? this.TextBoxIds.Distinct() : null,
-                                     tags.Any() ? tags.Where(t => !string.IsNullOrEmpty(t.Raw)).Distinct() : null,
+                                     this.SpaceWidth,
+                                     GetWorldArea(),
+                                     this.TextBoxIds?.Any() ?? false ? this.TextBoxIds.Distinct() : null,
+                                     this._tags?.Any() ?? false ? this._tags.Where(t => !string.IsNullOrEmpty(t.Raw)).Distinct() : null,
                                      null);
         }
 
@@ -258,12 +264,33 @@ namespace PDF.Data.Extractor
                    (limitXMin >= topLeft.X && limitXMin <= topRight.X) || (limitXMax >= topLeft.X && limitXMax <= topRight.X);
         }
 
+        /// <inheritdoc />
+        public BlockArea GetWorldArea()
+        {
+            return new BlockArea(new BlockPoint(this._topLeftWorld.X, this._topLeftWorld.Y),
+                                 new BlockPoint(this._topRightWorld.X, this._topRightWorld.Y),
+                                 new BlockPoint(this._bottomRightWorld.X, this._bottomRightWorld.Y),
+                                 new BlockPoint(this._bottomLeftWorld.X, this._bottomLeftWorld.Y));
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<DataTag>? GetTags()
+        {
+            return this._tags;
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<IDataTextBlock>? GetOrdererChildren()
+        {
+            return GetBlockOrderByRelativeCoord().Select(kv => kv.Block);
+        }
+
         #region Tools
 
         /// <summary>
         /// Pushes the data.
         /// </summary>
-        private void PushDataImpl(DataTextBlock data)
+        private void PushDataImpl(IDataTextBlock data)
         {
             if (this._blocks.Any() == false)
             {
@@ -305,11 +332,35 @@ namespace PDF.Data.Extractor
 
             var relativeBlockPoints = GetBlockOrderByRelativeCoord();
 
-            this.TextBoxIds = this._blocks.SelectMany(b => b.TextBoxIds ?? Array.Empty<float>())
-                                          .Where(b => b > -1)
-                                          .Distinct()
-                                          .OrderBy(b => b)
-                                          .ToArray();
+            var textBoxIds = new List<float>();
+            var tags = new List<DataTag>();
+            var spaceWith = float.MinValue;
+            var lineSize = float.MaxValue;
+
+            foreach (var block in this._blocks)
+            {
+                if (block.TextBoxIds is not null)
+                    textBoxIds.AddRange(block.TextBoxIds);
+
+                if (block.Tags is not null)
+                    tags.AddRange(block.Tags);
+
+                spaceWith = Math.Max(spaceWith, block.SpaceWidth);
+
+                lineSize = Math.Min(lineSize, block.LineSize);
+            }
+
+            this.TextBoxIds = textBoxIds.Where(b => b > -1)
+                                        .Distinct()
+                                        .OrderBy(b => b)
+                                        .ToArray();
+
+            this._tags = tags.Where(b => !string.IsNullOrEmpty(b.Raw))
+                             .Distinct()
+                             .ToArray();
+
+            this.LineSize = lineSize;
+            this.SpaceWidth = spaceWith;
 
             float minX = float.MaxValue;
             float minY = float.MaxValue;
@@ -351,7 +402,6 @@ namespace PDF.Data.Extractor
             this.LeftLineLength = this.LeftLine.Length();
             this.HalfLeftLineLength = this.LeftLineLength / 2.0f;
 
-
             var centerRelCoord = new Vector2(minX + ((maxX - minX) / 2.0f),
                                              minY + ((maxY - minY) / 2.0f));
 
@@ -366,7 +416,7 @@ namespace PDF.Data.Extractor
         /// <summary>
         /// Gets block relative position based on new Referential <see cref="_topLeftOriginPoint"/> && <see cref="_topLineUnit"/> && <see cref="_leftLineUnit"/>
         /// </summary>
-        private BlockArea GetRelativePosition(DataTextBlock block)
+        private BlockArea GetRelativePosition(IDataTextBlock block)
         {
             var area = block.Area;
             return new BlockArea(GetRelativePoint(area.TopLeft),
@@ -388,7 +438,7 @@ namespace PDF.Data.Extractor
         /// <summary>
         /// Get all the block sort by relative coord from top to bottom and left to right
         /// </summary>
-        private IReadOnlyCollection<(BlockArea RelArea, DataTextBlock Block)> GetBlockOrderByRelativeCoord()
+        private IReadOnlyCollection<(BlockArea RelArea, IDataTextBlock Block)> GetBlockOrderByRelativeCoord()
         {
             return this._blocks.Select(b => (RelArea: GetRelativePosition(b), Block: b))
                                .OrderBy(kv => kv.RelArea.TopLeft.Y / this._midLineSize)

@@ -110,10 +110,10 @@ namespace PDF.Data.Extractor.Strategies
         /// <summary>
         /// Consolidates the block created, try group close text ...
         /// </summary>
-        public IReadOnlyCollection<DataBlock> Consolidate(IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
+        public IReadOnlyCollection<IDataBlock> Consolidate(IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
                                                           CancellationToken token)
         {
-            var childrenBlocks = new List<DataBlock>(this._dataBlocks);
+            var childrenBlocks = new List<IDataBlock>(this._dataBlocks);
             foreach (var child in this._children)
             {
                 var childResults = child.Consolidate(strategies, token);

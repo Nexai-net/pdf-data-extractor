@@ -17,32 +17,48 @@ namespace PDF.Data.Extractor
         /// <summary>
         /// Apply a group of <see cref="IDataBlockMergeStrategy"/> to group of <see cref="DataBlock"/>
         /// </summary>
-        public static IReadOnlyCollection<DataBlock> Apply(this IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
-                                                           IReadOnlyCollection<DataBlock> childrenBlocks,
-                                                           CancellationToken token)
+        public static IReadOnlyCollection<IDataBlock> Apply(this IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
+                                                            IReadOnlyCollection<IDataBlock> childrenBlocks,
+                                                            CancellationToken token,
+                                                            bool breakOnFirstLoop = false)
         {
             if (childrenBlocks == null || !childrenBlocks.Any())
-                return Array.Empty<DataBlock>();
+                return Array.Empty<IDataBlock>();
+
+            bool haveMerged = true;
+            int preventInfinitLoop = 50;
 
             var localChildrenBlocks = childrenBlocks.ToList();
-            foreach (var strategy in strategies)
+
+            while (haveMerged && preventInfinitLoop > 0)
             {
-                var impacted = new List<DataBlock>();
-                for (int i = 0; i < localChildrenBlocks.Count; ++i)
+                haveMerged = false;
+                foreach (var strategy in strategies)
                 {
-                    var block = localChildrenBlocks[i];
-                    if (strategy.IsDataBlockManaged(block))
+                    var impacted = new List<IDataBlock>();
+                    for (int i = 0; i < localChildrenBlocks.Count; ++i)
                     {
-                        impacted.Add(block);
-                        localChildrenBlocks.RemoveAt(i);
-                        i--;
+                        var block = localChildrenBlocks[i];
+                        if (strategy.IsDataBlockManaged(block))
+                        {
+                            impacted.Add(block);
+                            localChildrenBlocks.RemoveAt(i);
+                            i--;
+                        }
+
+                        token.ThrowIfCancellationRequested();
                     }
 
-                    token.ThrowIfCancellationRequested();
+                    var remains = strategy.Merge(impacted, token);
+                    localChildrenBlocks.AddRange(remains);
+
+                    haveMerged |= remains.Count != impacted.Count;
                 }
 
-                var remains = strategy.Merge(impacted, token);
-                localChildrenBlocks.AddRange(remains);
+                if (breakOnFirstLoop)
+                    break;
+
+                preventInfinitLoop--;
             }
 
             return localChildrenBlocks;

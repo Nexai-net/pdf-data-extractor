@@ -10,8 +10,7 @@ namespace PDF.Data.Extractor.Abstractions
     public enum BlockRelationTypeEnum
     {
         None,
+        Group,
         Next,
-        Prev,
-        Column,
     }
 }

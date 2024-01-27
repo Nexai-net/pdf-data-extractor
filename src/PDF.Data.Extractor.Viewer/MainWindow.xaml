@@ -38,6 +38,7 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
                 <RowDefinition />
             </Grid.RowDefinitions>
 
@@ -108,6 +109,13 @@
             </Grid>
 
             <Grid Grid.Row="3" Margin="5">
+                <StackPanel>
+                    <CheckBox Content="Display DataBlocks" IsChecked="{Binding DisplayDataBlocks, Mode=TwoWay}" />
+                    <CheckBox Content="Display Relations" IsChecked="{Binding DisplayDataBlockRelation, Mode=TwoWay}" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Grid.Row="4" Margin="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
                     <RowDefinition />
