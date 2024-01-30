@@ -12,6 +12,7 @@ namespace PDF.Data.Extractor.Abstractions.Tags
         None,
         Raw,
         Lang,
-        Annotation
+        Annotation,
+        Prop
     }
 }

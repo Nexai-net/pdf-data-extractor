@@ -37,7 +37,7 @@ namespace PDF.Data.Extractor.Abstractions
             this.Uid = uid;
             this.Type = type;
             this.Area = area;
-            this.Tags = tags?.ToArray();
+            this.Tags = tags?.Distinct().ToArray();
             this.Children = children?.ToArray();
         }
 

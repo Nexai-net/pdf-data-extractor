@@ -45,7 +45,7 @@ namespace PDF.Data.Extractor.Abstractions
             this.Magnitude = magnitude;
             this.FontInfoUid = fontInfoUid;
             this.SpaceWidth = spaceWidth;
-            this.TextBoxIds = textBoxId?.ToArray();
+            this.TextBoxIds = textBoxId?.Distinct().ToArray();
         }
 
         #endregion

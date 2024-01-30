@@ -4,10 +4,13 @@
 
 namespace PDF.Data.Extractor.Abstractions.Tags
 {
+    using System.Runtime.Serialization;
+
     /// <summary>
     /// Define raw tag information directly extract from pdf
     /// </summary>
     /// <seealso cref="DataTag" />
+    [DataContract]
     public sealed class DataRawTag : DataTag
     {
         /// <summary>

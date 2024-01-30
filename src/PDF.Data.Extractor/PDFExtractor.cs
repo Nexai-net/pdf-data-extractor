@@ -175,10 +175,10 @@ namespace PDF.Data.Extractor
 
                 var docBlock = new DataDocumentBlock(Guid.NewGuid(),
                                                      documentName,
-                                                     new BlockArea(new BlockPoint(defaultPageSize.GetLeft(), defaultPageSize.GetTop()),
-                                                                   new BlockPoint(defaultPageSize.GetRight(), defaultPageSize.GetTop()),
+                                                     new BlockArea(new BlockPoint(defaultPageSize.GetLeft(), defaultPageSize.GetBottom()), // Y invert
                                                                    new BlockPoint(defaultPageSize.GetRight(), defaultPageSize.GetBottom()),
-                                                                   new BlockPoint(defaultPageSize.GetLeft(), defaultPageSize.GetBottom())),
+                                                                   new BlockPoint(defaultPageSize.GetRight(), defaultPageSize.GetTop()),
+                                                                   new BlockPoint(defaultPageSize.GetLeft(), defaultPageSize.GetTop())),
                                                      pageBlocks,
                                                      doc.GetPdfVersion().ToString(),
                                                      docInfo.GetAuthor(),

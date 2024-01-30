@@ -9,6 +9,7 @@ namespace PDF.Data.Extractor.Strategies
     using iText.Kernel.Pdf;
     using iText.Kernel.Pdf.Canvas;
     using iText.Layout.Element;
+    using Newtonsoft.Json.Linq;
 
     using PDF.Data.Extractor.Abstractions;
     using PDF.Data.Extractor.Abstractions.MetaData;
@@ -17,8 +18,11 @@ namespace PDF.Data.Extractor.Strategies
 
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
     using System.Linq;
     using System.Text;
+    using System.Text.RegularExpressions;
 
     /// <summary>
     /// Build information about a data block
@@ -98,7 +102,7 @@ namespace PDF.Data.Extractor.Strategies
                                  BlockArea area,
                                  IList<CanvasTag> tags)
         {
-            
+
             this._dataBlocks.Add(new DataImageBlock(Guid.NewGuid(),
                                                     imgName.GetValue(),
                                                     image.Uid,
@@ -134,10 +138,77 @@ namespace PDF.Data.Extractor.Strategies
         /// </summary>
         private IReadOnlyCollection<DataTag> AnalyzeTags(IEnumerable<CanvasTag> tags)
         {
-            // TODO : analyze tags
-            return tags?.Select(t => new DataRawTag(t.GetActualText() ?? t.GetExpansionText()))
-                        .Where(t => !string.IsNullOrEmpty(t.Raw))
-                        .ToArray() ?? Array.Empty<DataTag>();
+            var dataTag = new List<DataTag>();
+
+            foreach (var tag in tags)
+            {
+                var lang = tag.GetProperty(PdfName.Lang);
+                var language = tag.GetProperty(PdfName.Language);
+
+                if (lang != null || language != null)
+                {
+                    var raw = (lang ?? language)?.ToString() ?? string.Empty;
+
+                    if (!string.IsNullOrEmpty(raw))
+                    {
+                        var culture = CultureInfo.GetCultureInfo(raw);
+                        dataTag.Add(new DataLangTag(culture?.TextInfo?.CultureName ?? string.Empty, raw));
+
+                        continue;
+                    }
+                }
+
+                var objs = new List<(string category, PdfObject obj)>();
+
+                var metaData = tag.GetProperty(PdfName.Metadata);
+                if (metaData != null)
+                    objs.Add((nameof(PdfName.Metadata), metaData));
+
+                var flatObjs = FlatternPdfObjectStream(objs);
+
+                foreach (var flat in flatObjs)
+                {
+                    if (flat.obj is PdfNumber number)
+                    {
+                        dataTag.Add(new DataPropTag(flat.category, number.GetValue().ToString(), number.ToString()));
+                        continue;
+                    }
+
+                    if (flat.obj is PdfString literal)
+                    {
+                        dataTag.Add(new DataPropTag(flat.category, literal.GetValue().ToString(), literal.ToString()));
+                        continue;
+                    }
+                }
+            }
+            return dataTag.Distinct().ToArray();
+        }
+
+        /// <summary>
+        /// Flatterns the PDF object.
+        /// </summary>
+        private static IReadOnlyCollection<(string category, PdfObject obj)> FlatternPdfObjectStream(List<(string category, PdfObject obj)> objs)
+        {
+            bool flattern = true;
+            do
+            {
+                flattern = false;
+                var objArray = objs.ToArray();
+                foreach (var obj in objArray)
+                {
+                    if (obj.obj.IsStream())
+                    {
+                        var stream = (PdfStream)obj.obj;
+                        objs.Remove(obj);
+                        var insides = stream.Values();
+                        objs.AddRange(insides.Select(i => (obj.category, i)));
+
+                        flattern = true;
+                    }
+                }
+            } while (flattern);
+
+            return objs; 
         }
 
         private string ConvertImageType(ImageType imgType)

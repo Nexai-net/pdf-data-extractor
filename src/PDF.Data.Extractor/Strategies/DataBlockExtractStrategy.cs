@@ -132,10 +132,10 @@
             return new DataPageBlock(Guid.NewGuid(),
                                      pageNumber,
                                      this._page.GetRotation(),
-                                     new BlockArea(new BlockPoint(pageSize.GetLeft(), pageSize.GetTop()),
-                                                   new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
+                                     new BlockArea(new BlockPoint(pageSize.GetLeft(), pageSize.GetBottom()),
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetBottom()),
-                                                   new BlockPoint(pageSize.GetLeft(), pageSize.GetBottom())),
+                                                   new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
+                                                   new BlockPoint(pageSize.GetLeft(), pageSize.GetTop())),
                                      ComputeBlockRelation(pageBlocks, token),
                                      pageBlocks.OfType<DataBlock>());
         }

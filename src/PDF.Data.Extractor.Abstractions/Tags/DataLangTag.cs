@@ -4,10 +4,13 @@
 
 namespace PDF.Data.Extractor.Abstractions.Tags
 {
+    using System.Runtime.Serialization;
+
     /// <summary>
     /// Define language tag information directly extract from pdf
     /// </summary>
     /// <seealso cref="DataTag" />
+    [DataContract]
     public sealed class DataLangTag : DataTag
     {
         #region Ctor
@@ -28,7 +31,19 @@ namespace PDF.Data.Extractor.Abstractions.Tags
         /// <summary>
         /// Gets the language.
         /// </summary>
+        [DataMember]
         public string Lang { get; }
+
+        #endregion
+
+        #region Methods
+
+        /// <inheritdoc cref="object.Equals(object?)" />
+        protected override bool OnEquals(DataTag tag)
+        {
+            return tag is DataLangTag lng &&
+                   string.Equals(this.Lang, lng.Lang, StringComparison.OrdinalIgnoreCase);
+        }
 
         #endregion
     }
