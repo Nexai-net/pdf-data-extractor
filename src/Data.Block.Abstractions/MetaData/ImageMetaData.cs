@@ -2,7 +2,7 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions.MetaData
+namespace Data.Block.Abstractions.MetaData
 {
     using System;
     using System.Runtime.Serialization;

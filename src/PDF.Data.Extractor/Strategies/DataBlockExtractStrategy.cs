@@ -6,7 +6,7 @@
     using iText.Kernel.Pdf.Canvas.Parser.Data;
     using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
-    using PDF.Data.Extractor.Abstractions;
+    using global::Data.Block.Abstractions;
     using PDF.Data.Extractor.Extensions;
     using PDF.Data.Extractor.InternalModels;
     using PDF.Data.Extractor.Services;

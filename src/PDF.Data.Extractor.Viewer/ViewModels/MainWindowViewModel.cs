@@ -4,23 +4,19 @@
 
 namespace PDF.Data.Extractor.Viewer.ViewModels
 {
+    using global::Data.Block.Abstractions;
+
     using iText.Kernel.Pdf;
-    using iText.Kernel.Pdf.Canvas.Parser;
 
     using Microsoft.Win32;
 
-    using PDF.Data.Extractor.Abstractions;
-    using PDF.Data.Extractor.Services;
     using PDF.Data.Extractor.Viewer.Models;
     using PDF.Data.Extractor.Viewer.Tools;
 
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel;
     using System.IO;
     using System.Linq;
-    using System.Runtime.CompilerServices;
-    using System.Security.Permissions;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;

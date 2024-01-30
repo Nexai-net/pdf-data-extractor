@@ -2,12 +2,11 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions
+namespace Data.Block.Abstractions
 {
-    using PDF.Data.Extractor.Abstractions.Tags;
+    using Data.Block.Abstractions.Tags;
 
     using System;
-    using System.Runtime.Serialization;
 
     /// <summary>
     /// Define a data block

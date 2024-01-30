@@ -4,9 +4,7 @@
 
 namespace PDF.Data.Extractor.Viewer.ViewModels
 {
-    using PDF.Data.Extractor.Abstractions;
-
-    using System;
+    using global::Data.Block.Abstractions;
 
     public sealed class DataBlockRelationViewModel : DataBlockViewBaseModel<DataRelationBlock>, IDataBlockViewModel
     {

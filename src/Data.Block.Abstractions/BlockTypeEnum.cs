@@ -2,17 +2,18 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions.Tags
+namespace Data.Block.Abstractions
 {
     /// <summary>
-    /// Type of tag
+    /// Define the type of data block
     /// </summary>
-    public enum DataTagTypeEnum
+    public enum BlockTypeEnum
     {
         None,
-        Raw,
-        Lang,
-        Annotation,
-        Prop
+        Text,
+        Image,
+        Relation,
+        Document,
+        Page
     }
 }

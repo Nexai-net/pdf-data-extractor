@@ -2,7 +2,7 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions.Tags
+namespace Data.Block.Abstractions.Tags
 {
     using System.Runtime.Serialization;
 
@@ -18,7 +18,7 @@ namespace PDF.Data.Extractor.Abstractions.Tags
         /// <summary>
         /// Initializes a new instance of the <see cref="DataLangTag"/> class.
         /// </summary>
-        public DataLangTag(string lang, string raw) 
+        public DataLangTag(string lang, string raw)
             : base(DataTagTypeEnum.Lang, raw)
         {
             this.Lang = lang;

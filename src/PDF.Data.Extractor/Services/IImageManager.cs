@@ -7,7 +7,7 @@ namespace PDF.Data.Extractor.Services
     using iText.Kernel.Pdf.Xobject;
     using iText.Layout.Element;
 
-    using PDF.Data.Extractor.Abstractions.MetaData;
+    using global::Data.Block.Abstractions.MetaData;
 
     /// <summary>
     /// Manager in charge to store image as resources 

@@ -4,7 +4,7 @@
 
 namespace PDF.Data.Extractor.Viewer.ViewModels
 {
-    using PDF.Data.Extractor.Abstractions;
+    using global::Data.Block.Abstractions;
 
     public abstract class DataBlockViewBaseModel<TDataBlock> : BaseViewModel, IDataBlockViewModel
         where TDataBlock : IDataBlock

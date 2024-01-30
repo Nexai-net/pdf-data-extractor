@@ -4,10 +4,10 @@
 
 namespace PDF.Data.Extractor.Services
 {
+    using global::Data.Block.Abstractions.MetaData;
+
     using iText.IO.Font;
     using iText.Kernel.Font;
-
-    using PDF.Data.Extractor.Abstractions.MetaData;
 
     /// <summary>
     /// Default font handler, strategy and manager

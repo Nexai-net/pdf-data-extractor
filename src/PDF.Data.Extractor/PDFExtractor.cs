@@ -7,7 +7,7 @@ namespace PDF.Data.Extractor
     using iText.Kernel.Pdf;
     using iText.Kernel.Pdf.Canvas.Parser;
 
-    using PDF.Data.Extractor.Abstractions;
+    using global::Data.Block.Abstractions;
     using PDF.Data.Extractor.Services;
     using PDF.Data.Extractor.Strategies;
 

@@ -6,7 +6,7 @@ namespace PDF.Data.Extractor.Services
 {
     using iText.Kernel.Font;
 
-    using PDF.Data.Extractor.Abstractions.MetaData;
+    using global::Data.Block.Abstractions.MetaData;
 
     using System;
 

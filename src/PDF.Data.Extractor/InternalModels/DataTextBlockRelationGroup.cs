@@ -4,8 +4,8 @@
 
 namespace PDF.Data.Extractor.InternalModels
 {
-    using PDF.Data.Extractor.Abstractions;
-    using PDF.Data.Extractor.Abstractions.Tags;
+    using global::Data.Block.Abstractions;
+    using global::Data.Block.Abstractions.Tags;
 
     using System;
     using System.Collections.Generic;

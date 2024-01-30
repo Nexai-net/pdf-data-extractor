@@ -4,8 +4,8 @@
 
 namespace PDF.Data.Extractor.Strategies
 {
-    using PDF.Data.Extractor.Abstractions;
-    using PDF.Data.Extractor.Abstractions.MetaData;
+    using global::Data.Block.Abstractions;
+    using global::Data.Block.Abstractions.MetaData;
     using PDF.Data.Extractor.Services;
 
     using System;

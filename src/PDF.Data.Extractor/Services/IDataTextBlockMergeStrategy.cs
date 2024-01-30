@@ -4,7 +4,7 @@
 
 namespace PDF.Data.Extractor.Services
 {
-    using PDF.Data.Extractor.Abstractions;
+    using global::Data.Block.Abstractions;
 
     /// <summary>
     /// Strategy used to merge <see cref="DataTextBlock"/>

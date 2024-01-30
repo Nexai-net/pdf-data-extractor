@@ -3,9 +3,9 @@
 using CommandLine;
 using CommandLine.Text;
 
-using PDF.Data.Extractor;
+using Data.Block.Abstractions;
 
-using PDF.Data.Extractor.Abstractions;
+using PDF.Data.Extractor;
 using PDF.Data.Extractor.Console.Models;
 
 using System.Text;

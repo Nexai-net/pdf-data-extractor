@@ -4,8 +4,8 @@
 
 namespace PDF.Data.Extractor
 {
-    using PDF.Data.Extractor.Abstractions;
-    using PDF.Data.Extractor.Abstractions.Tags;
+    using global::Data.Block.Abstractions;
+    using global::Data.Block.Abstractions.Tags;
 
     using System;
     using System.Numerics;
@@ -25,7 +25,6 @@ namespace PDF.Data.Extractor
 
         private long _using;
         private float _midLineSize;
-
 
         private BlockPoint? _topLeftOriginPoint;
         private Vector2? _topLeftOriginPointVect;

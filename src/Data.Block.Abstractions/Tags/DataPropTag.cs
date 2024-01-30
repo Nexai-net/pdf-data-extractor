@@ -2,7 +2,7 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions.Tags
+namespace Data.Block.Abstractions.Tags
 {
     using System.Runtime.Serialization;
 
@@ -18,13 +18,13 @@ namespace PDF.Data.Extractor.Abstractions.Tags
         /// <summary>
         /// Initializes a new instance of the <see cref="DataRawTag"/> class.
         /// </summary>
-        public DataPropTag(string prop, string value, string raw) 
+        public DataPropTag(string prop, string value, string raw)
             : base(DataTagTypeEnum.Prop, raw)
         {
             this.Prop = prop;
             this.Value = value;
         }
-        
+
         #endregion
 
         #region Properties
