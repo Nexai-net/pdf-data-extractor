@@ -6,27 +6,24 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 {
     using global::Data.Block.Abstractions;
 
-    using System;
-
-    public sealed class DataBlockViewModel : DataBlockViewBaseModel<DataBlock>, IDataBlockViewModel
+    public sealed class DataBlockRelationViewModel : DataBlockViewBaseModel<DataRelationBlock>, IDataBlockViewModel
     {
         #region Ctor
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataBlockViewModel"/> class.
         /// </summary>
-        public DataBlockViewModel(DataBlock dataBlock)
+        public DataBlockRelationViewModel(DataRelationBlock dataBlock)
             : base(dataBlock)
         {
-            this.DisplayText = (dataBlock as DataTextBlock)?.Text
-                                     ?? (dataBlock as DataImageBlock)?.Name
-                                     ?? Guid.NewGuid().ToString();
+            this.DisplayText = dataBlock.BlockRelationType.ToString() + ": " + (dataBlock.BlocksContained?.Count ?? 0);
         }
 
         #endregion
 
         #region Properties
 
+        /// <inheritdoc />
         public override string DisplayText { get; }
 
         #endregion

@@ -13,7 +13,7 @@ namespace PDF.Data.Extractor.Viewer.Controls
     /// <summary>
     /// 
     /// </summary>
-    /// <seealso cref="System.Windows.FrameworkElement" />
+    /// <seealso cref="FrameworkElement" />
     public sealed class PDFDataBlockView : Control
     {
         #region Fields
@@ -32,8 +32,7 @@ namespace PDF.Data.Extractor.Viewer.Controls
 
         public static readonly DependencyProperty CornerTopLeftProperty = s_cornerTopLeftPropertyKey.DependencyProperty;
 
-        private readonly DataBlockViewModel _dataBlock;
-        private readonly PDFPageViewer _pageViewer;
+        private readonly IDataBlockViewModel _dataBlock;
 
         #endregion
 
@@ -51,12 +50,10 @@ namespace PDF.Data.Extractor.Viewer.Controls
         /// <summary>
         /// Initializes a new instance of the <see cref="PDFDataBlockView"/> class.
         /// </summary>
-        public PDFDataBlockView(DataBlockViewModel dataBlock, PDFPageViewer pageViewer)
+        public PDFDataBlockView(IDataBlockViewModel dataBlock)
         {
             this._dataBlock = dataBlock;
             this.DataContext = dataBlock;
-
-            this._pageViewer = pageViewer;
 
             var area = dataBlock.Area;
             var topleft = new Point(area.TopLeft.X, area.TopLeft.Y);
@@ -71,9 +68,6 @@ namespace PDF.Data.Extractor.Viewer.Controls
 
             SetValue(s_cornerTopLeftPropertyKey, topleft);
             SetValue(s_pointsPropertyKey, collection);
-
-            dataBlock.PropertyChanged -= DataBlock_PropertyChanged;
-            dataBlock.PropertyChanged += DataBlock_PropertyChanged;
         }
 
         #endregion
@@ -94,20 +88,6 @@ namespace PDF.Data.Extractor.Viewer.Controls
         public Point? CornerTopLeft
         {
             get { return (Point?)GetValue(CornerTopLeftProperty); }
-        }
-
-        #endregion
-
-        #region Methods
-
-        private void DataBlock_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (this._dataBlock.IsSelected)
-            {
-            }
-            else
-            {
-            }
         }
 
         #endregion

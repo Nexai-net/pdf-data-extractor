@@ -2,7 +2,7 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions
+namespace Data.Block.Abstractions
 {
     using System;
     using System.Numerics;
@@ -63,7 +63,7 @@ namespace PDF.Data.Extractor.Abstractions
             if (matchSin)
             {
                 var sin = Math.Asin(dotProduct);
-                directionFactor = (sin > 0 ? 1 : -1);
+                directionFactor = sin > 0 ? 1 : -1;
             }
 
             return (float)Math.Acos(dotProduct * directionFactor);

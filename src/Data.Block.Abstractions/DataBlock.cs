@@ -2,9 +2,9 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions
+namespace Data.Block.Abstractions
 {
-    using PDF.Data.Extractor.Abstractions.Tags;
+    using Data.Block.Abstractions.Tags;
 
     using System;
     using System.Collections.Generic;
@@ -21,7 +21,7 @@ namespace PDF.Data.Extractor.Abstractions
     [JsonDerivedType(typeof(DataPageBlock), "page")]
     [JsonDerivedType(typeof(DataDocumentBlock), "document")]
     [JsonDerivedType(typeof(DataRelationBlock), "relation")]
-    public abstract class DataBlock
+    public abstract class DataBlock : IDataBlock
     {
         #region Ctor
 
@@ -37,7 +37,7 @@ namespace PDF.Data.Extractor.Abstractions
             this.Uid = uid;
             this.Type = type;
             this.Area = area;
-            this.Tags = tags?.ToArray();
+            this.Tags = tags?.Distinct().ToArray();
             this.Children = children?.ToArray();
         }
 

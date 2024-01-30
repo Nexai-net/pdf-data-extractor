@@ -2,8 +2,10 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor.Abstractions
+namespace Data.Block.Abstractions
 {
+    using System;
+    using System.Collections.Generic;
     using System.Diagnostics;
     using System.Numerics;
     using System.Runtime.Serialization;
@@ -132,6 +134,18 @@ namespace PDF.Data.Extractor.Abstractions
         [JsonIgnore]
         [IgnoreDataMember]
         public Vector2 RightLine { get; }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// Gets new points collection.
+        /// </summary>
+        public IReadOnlyCollection<BlockPoint> GetPoints()
+        {
+            return new[] { this.TopLeft, this.TopRight, this.BottomRight, this.BottomLeft };
+        }
 
         #endregion
     }

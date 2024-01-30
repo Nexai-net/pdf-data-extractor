@@ -6,12 +6,15 @@
     using iText.Kernel.Pdf.Canvas.Parser.Data;
     using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
-    using PDF.Data.Extractor.Abstractions;
+    using global::Data.Block.Abstractions;
+    using PDF.Data.Extractor.Extensions;
+    using PDF.Data.Extractor.InternalModels;
     using PDF.Data.Extractor.Services;
 
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Numerics;
 
     using Vector = iText.Kernel.Geom.Vector;
@@ -129,12 +132,12 @@
             return new DataPageBlock(Guid.NewGuid(),
                                      pageNumber,
                                      this._page.GetRotation(),
-                                     new BlockArea(new BlockPoint(pageSize.GetLeft(), pageSize.GetTop()),
-                                                   new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
+                                     new BlockArea(new BlockPoint(pageSize.GetLeft(), pageSize.GetBottom()),
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetBottom()),
-                                                   new BlockPoint(pageSize.GetLeft(), pageSize.GetBottom())),
-                                     null, // TODO : Relation Not compute now
-                                     pageBlocks);
+                                                   new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
+                                                   new BlockPoint(pageSize.GetLeft(), pageSize.GetTop())),
+                                     ComputeBlockRelation(pageBlocks, token),
+                                     pageBlocks.OfType<DataBlock>());
         }
 
         /// <inheritdoc />
@@ -144,6 +147,41 @@
         }
 
         #region Tools
+
+        /// <summary>
+        /// Computes the block relation.
+        /// </summary>
+        private IEnumerable<DataRelationBlock> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks, CancellationToken token)
+        {
+            var createTextCloseGroup = new DataTextBlockProximityStrategy(compareFontInfo: false,
+                                                                          horizontalDistanceTolerance: 0.2f,
+                                                                          verticalDistanceTolerance: 0.6f,
+                                                                          customCompile: grp => new DataTextBlockRelationGroup(Guid.NewGuid(),
+                                                                                                                               grp.GetWorldArea(),
+                                                                                                                               grp.GetTags(),
+                                                                                                                               grp.GetOrdererChildren()));
+
+            token.ThrowIfCancellationRequested();
+            var globalGrp = new[] { createTextCloseGroup }.Apply(pageBlocks, token, breakOnFirstLoop: false);
+            var grpRelation = ConstructRelationStruct(globalGrp, BlockRelationTypeEnum.Group);
+
+            token.ThrowIfCancellationRequested();
+            return grpRelation;
+        }
+
+        private static DataRelationBlock[] ConstructRelationStruct(IReadOnlyCollection<IDataBlock> globalGrp, BlockRelationTypeEnum blockRelation)
+        {
+            return globalGrp.Where(g => g.Children is not null && g.Children.GetTreeElement(c => c.Children)
+                                                                                       .Where(c => c is not null && c is DataTextBlock)
+                                                                                       .Count() > 1)
+                                       .Select(g => new DataRelationBlock(g.Uid,
+                                                                          g.Area,
+                                                                          blockRelation,
+                                                                          g.Children!.GetTreeElement(c => c.Children)
+                                                                                     .Where(c => c != null && c is DataTextBlock)
+                                                                                     .Select(c => c!.Uid).Distinct()))
+                                       .ToArray();
+        }
 
         /// <summary>
         /// Extract text information
@@ -188,8 +226,7 @@
             var fontInfo = this._fontManager.AddOrGetFontInfo(fontSize, font);
 
             Debug.Assert(this._currentBlockBuilder != null);
-            this._currentBlockBuilder.AddTextData(actualTxtStr,
-                                                  fontSize,
+            this._currentBlockBuilder.AddTextData(fontSize,
                                                   sizeAdjusted,
                                                   fontInfo,
                                                   txt.GetSingleSpaceWidth(),
@@ -200,6 +237,7 @@
                                                   text,
                                                   txt.GetMcid(),
                                                   tags);
+
             this._token.ThrowIfCancellationRequested();
         }
 
@@ -260,10 +298,10 @@
         /// <summary>
         /// Compiles the data blocks.
         /// </summary>
-        private IReadOnlyCollection<DataBlock> CompileDataBlocks(IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
+        private IReadOnlyCollection<IDataBlock> CompileDataBlocks(IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
                                                                  CancellationToken token)
         {
-            var blocks = new List<DataBlock>(42);
+            var blocks = new List<IDataBlock>(42);
             foreach (var r in this._roots)
             {
                 this._token.ThrowIfCancellationRequested();

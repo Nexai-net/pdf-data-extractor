@@ -35,7 +35,7 @@ namespace PDF.Data.Extractor.Viewer.Controls
                                                                                                  new FrameworkPropertyMetadata(null,
                                                                                                                                propertyChangedCallback: OnDocumentPropertyChanged));
         public static readonly DependencyProperty DataBlocksProperty = DependencyProperty.Register(nameof(DataBlocks),
-                                                                                                   typeof(IReadOnlyCollection<DataBlockViewModel>),
+                                                                                                   typeof(IReadOnlyCollection<IDataBlockViewModel>),
                                                                                                    typeof(PDFPageViewer),
                                                                                                    new FrameworkPropertyMetadata(null,
                                                                                                                                  propertyChangedCallback: OnDataBlocksCollectionChanged));
@@ -78,9 +78,9 @@ namespace PDF.Data.Extractor.Viewer.Controls
         /// <summary>
         /// Gets or sets the data blocks.
         /// </summary>
-        public IReadOnlyCollection<DataBlockViewModel> DataBlocks
+        public IReadOnlyCollection<IDataBlockViewModel> DataBlocks
         {
-            get { return (IReadOnlyCollection<DataBlockViewModel>)GetValue(DataBlocksProperty); }
+            get { return (IReadOnlyCollection<IDataBlockViewModel>)GetValue(DataBlocksProperty); }
             set { SetValue(DataBlocksProperty, value); }
         }
 
@@ -128,7 +128,7 @@ namespace PDF.Data.Extractor.Viewer.Controls
             if (this.DataBlocks == null || this.DataBlocks.Count <= 0)
                 return;
 
-            this._dataBlocksView.AddRange(this.DataBlocks!.Select(d => new PDFDataBlockView(d, this)));
+            this._dataBlocksView.AddRange(this.DataBlocks!.Select(d => new PDFDataBlockView(d)));
 
             foreach (var child in this._dataBlocksView)
                 this.Children.Add(child);

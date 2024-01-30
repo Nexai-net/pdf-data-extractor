@@ -6,30 +6,31 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ctrl:PDFDataBlockView}">
-                    <!--<Grid>-->
-                        <Polygon Points="{TemplateBinding Points}"
-                                 StrokeThickness="1"
-                                 Fill="Transparent"
-                                 Stroke="Blue"
-                                 x:Name="Shape">
-                            <Polygon.ToolTip>
-                                <TextBlock Text="{Binding DisplayText}" />
-                            </Polygon.ToolTip>
-                        </Polygon>
-                        <!--<Ellipse RenderTransformOrigin="0.5,0.5"
-                                 Width="5"
-                                 Height="5"
-                                 Fill="#AA555555">
-                            <Ellipse.RenderTransform>
-                                <TranslateTransform X="{Binding CornerTopLeft.Value.X, RelativeSource={RelativeSource Mode=TemplatedParent}}"
-                                                    Y="{Binding CornerTopLeft.Value.Y, RelativeSource={RelativeSource Mode=TemplatedParent}}" />
-                            </Ellipse.RenderTransform>
-                        </Ellipse>
-                    </Grid>-->
+                    <Polygon Points="{TemplateBinding Points}"
+                             StrokeThickness="1"
+                             Fill="Transparent"
+                             Stroke="Blue"
+                             x:Name="Shape">
+                        <Polygon.ToolTip>
+                            <TextBlock Text="{Binding DisplayText}" />
+                        </Polygon.ToolTip>
+                    </Polygon>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsSelected}" Value="true">
                             <Setter TargetName="Shape" Property="Fill" Value="#AA555555" />
                         </DataTrigger>
+                        <DataTrigger Binding="{Binding IsVisible}" Value="false">
+                            <Setter  Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+
+                        <DataTrigger Binding="{Binding Type}" Value="Image">
+                            <Setter TargetName="Shape" Property="Stroke" Value="Orange" />
+                        </DataTrigger>
+
+                        <DataTrigger Binding="{Binding Type}" Value="Relation">
+                            <Setter TargetName="Shape" Property="Stroke" Value="Red" />
+                        </DataTrigger>
+
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>

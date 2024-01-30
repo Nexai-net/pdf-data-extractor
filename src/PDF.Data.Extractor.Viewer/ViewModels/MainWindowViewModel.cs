@@ -4,23 +4,19 @@
 
 namespace PDF.Data.Extractor.Viewer.ViewModels
 {
+    using global::Data.Block.Abstractions;
+
     using iText.Kernel.Pdf;
-    using iText.Kernel.Pdf.Canvas.Parser;
 
     using Microsoft.Win32;
 
-    using PDF.Data.Extractor.Abstractions;
-    using PDF.Data.Extractor.Services;
     using PDF.Data.Extractor.Viewer.Models;
     using PDF.Data.Extractor.Viewer.Tools;
 
     using System;
     using System.Collections.Generic;
-    using System.ComponentModel;
     using System.IO;
     using System.Linq;
-    using System.Runtime.CompilerServices;
-    using System.Security.Permissions;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
@@ -41,8 +37,12 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         private iText.Kernel.Pdf.PdfDocument? _document;
         private PdfReader? _docReader;
         private int _displayPage;
-        private IReadOnlyCollection<DataBlockViewModel>? _dataBlocks;
+        private IReadOnlyCollection<IDataBlockViewModel>? _dataBlocks;
         private bool _autoAnalyzeWhenChangePage;
+        private IDataBlockViewModel[]? _dataBlocksBasic;
+        private IDataBlockViewModel[]? _relation;
+        private bool _displayDataBlocks;
+        private bool _displayDataBlockRelation;
         private readonly AsyncDelegateCommand _analyzeCommand;
 
         private readonly DelegateCommand _pickPdfCommand;
@@ -71,6 +71,9 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
             this._prevPageCommand = new DelegateCommand(() => this.DisplayPage = Math.Max(1, this.DisplayPage - 1),
                                                          _ => this.IsWorking == false && this.DisplayPage - 1 > 0);
             this.PrevPageCommand = this._prevPageCommand;
+
+            this._displayDataBlockRelation = true;
+            this._displayDataBlocks = true;
         }
 
         #endregion
@@ -134,10 +137,42 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
             }
         }
 
-        public IReadOnlyCollection<DataBlockViewModel>? DataBlocks
+        public IReadOnlyCollection<IDataBlockViewModel>? DataBlocks
         {
             get { return this._dataBlocks; }
             private set { SetProperty(ref this._dataBlocks, value); }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [display data block relation].
+        /// </summary>
+        public bool DisplayDataBlockRelation
+        {
+            get { return this._displayDataBlockRelation; }
+            set
+            {
+                if (SetProperty(ref this._displayDataBlockRelation, value) && this._relation is not null)
+                {
+                    foreach (var relation in this._relation)
+                        relation.IsVisible = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether [display data blocks].
+        /// </summary>
+        public bool DisplayDataBlocks
+        {
+            get { return this._displayDataBlocks; }
+            set 
+            {
+                if (SetProperty(ref this._displayDataBlocks, value) && this._dataBlocksBasic is not null)
+                {
+                    foreach (var basic in this._dataBlocksBasic)
+                        basic.IsVisible = value;
+                }
+            }
         }
 
         #endregion
@@ -163,11 +198,29 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                                                                       PageRange = new Range(this.DisplayPage - 1, this.DisplayPage)
                                                                   });
 
-                    this.DataBlocks = ((analyzeDoc.Children ?? Array.Empty<DataBlock>())
-                                                .FirstOrDefault()
-                                                ?.Children ?? Array.Empty<DataBlock>())
-                                                 .Select(b => new DataBlockViewModel(b))
-                                                 .ToArray() ?? Array.Empty<DataBlockViewModel>();
+                    var page = (analyzeDoc.Children ?? Array.Empty<DataBlock>()).OfType<DataPageBlock>().FirstOrDefault();
+
+                    if (page is null)
+                    {
+                        this.DataBlocks = null;
+                        return;
+                    }
+
+                    this._dataBlocksBasic = (page.Children ?? Array.Empty<DataBlock>())
+                                                  .Select(b => new DataBlockViewModel(b)
+                                                  {
+                                                      IsVisible = this.DisplayDataBlocks
+                                                  })
+                                                  .ToArray<IDataBlockViewModel>();
+
+                    this._relation = (page.Relations ?? Array.Empty<DataRelationBlock>())
+                                        .Select(b => new DataBlockRelationViewModel(b)
+                                        {
+                                            IsVisible = this.DisplayDataBlockRelation
+                                        })
+                                        .ToArray<IDataBlockViewModel>();
+
+                    this.DataBlocks = _dataBlocksBasic.Concat(this._relation).ToArray();
                 }
             }
             finally
