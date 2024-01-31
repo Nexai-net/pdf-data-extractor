@@ -1,21 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
-    <UseWPF>true</UseWPF>
-  </PropertyGroup>
+	<Import Project="../../SharedSolutionCredential.props" />
 
-  <ItemGroup>
-    <PackageReference Include="IronPdf" Version="2024.1.20" />
-    <PackageReference Include="itext7" Version="8.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
-  </ItemGroup>
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFramework>net7.0-windows</TargetFramework>
+		<UseWPF>true</UseWPF>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Data.Block.Abstractions\Data.Block.Abstractions.csproj" />
-    <ProjectReference Include="..\PDF.Data.Extractor\PDF.Data.Extractor.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="IronPdf" Version="2024.1.20" />
+		<PackageReference Include="itext7" Version="8.0.2" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Data.Block.Abstractions\Data.Block.Abstractions.csproj" />
+		<ProjectReference Include="..\PDF.Data.Extractor\PDF.Data.Extractor.csproj" />
+	</ItemGroup>
 
 </Project>

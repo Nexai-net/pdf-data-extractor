@@ -8,13 +8,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{6CF3E8CA-DF0E-456F-8CC9-3A608A385043}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		SharedSolutionCredential.props = SharedSolutionCredential.props
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Data.Block.Abstractions", "src\Data.Block.Abstractions\Data.Block.Abstractions.csproj", "{75D9265B-73C7-4614-9F69-ED4E861966E2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDF.Data.Extractor.Viewer", "src\PDF.Data.Extractor.Viewer\PDF.Data.Extractor.Viewer.csproj", "{7A215534-C5F6-4FEB-8906-438F6F72D3D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDF.Data.Extractor.Viewer", "src\PDF.Data.Extractor.Viewer\PDF.Data.Extractor.Viewer.csproj", "{7A215534-C5F6-4FEB-8906-438F6F72D3D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PDF.Data.Extractor.Console", "src\PDF.Data.Extractor.Console\PDF.Data.Extractor.Console.csproj", "{727E6FCD-8BD0-44EE-BCB8-2C3245278429}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDF.Data.Extractor.Console", "src\PDF.Data.Extractor.Console\PDF.Data.Extractor.Console.csproj", "{727E6FCD-8BD0-44EE-BCB8-2C3245278429}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

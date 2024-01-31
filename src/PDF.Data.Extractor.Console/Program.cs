@@ -49,7 +49,7 @@ using (var docBlockExtractor = new PDFExtractor())
     if (!string.IsNullOrEmpty(commandLine.Value.OutputName))
         outputDirName = commandLine.Value.OutputName;
 
-    var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName));
+    var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
     if (!Directory.Exists(finalDir.LocalPath))
     {
         Directory.CreateDirectory(finalDir.LocalPath);
