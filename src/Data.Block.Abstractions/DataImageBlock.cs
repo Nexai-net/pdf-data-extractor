@@ -24,7 +24,7 @@ namespace Data.Block.Abstractions
         /// </summary>
         public DataImageBlock(Guid uid,
                               string name,
-                              Guid imageResourceUid,
+                              Guid? imageResourceUid,
                               BlockArea area,
                               IReadOnlyCollection<DataTag> tags,
                               IEnumerable<DataBlock>? children)
@@ -48,7 +48,7 @@ namespace Data.Block.Abstractions
         /// Gets the image resource uid.
         /// </summary>
         [DataMember]
-        public Guid ImageResourceUid { get; }
+        public Guid? ImageResourceUid { get; }
 
         #endregion
     }

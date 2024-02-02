@@ -8,6 +8,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
     using iText.Kernel.Pdf;
 
+    using Microsoft.Extensions.Logging;
     using Microsoft.Win32;
 
     using PDF.Data.Extractor.Viewer.Models;
@@ -15,6 +16,8 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
     using System;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Threading;
@@ -44,10 +47,14 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         private bool _displayDataBlocks;
         private bool _displayDataBlockRelation;
         private readonly AsyncDelegateCommand _analyzeCommand;
+        private readonly AsyncDelegateCommand _pickPdfCommand;
 
-        private readonly DelegateCommand _pickPdfCommand;
         private readonly DelegateCommand _prevPageCommand;
         private readonly DelegateCommand _nextPageCommand;
+
+        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILogger _logger;
+        private readonly ObservableCollection<Log> _logs;
 
         #endregion
 
@@ -58,7 +65,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         /// </summary>
         public MainWindowViewModel()
         {
-            this._pickPdfCommand = new DelegateCommand(PickPdf, _ => this.IsWorking == false);
+            this._pickPdfCommand = new AsyncDelegateCommand(PickPdfAsync, _ => this.IsWorking == false);
             this.PickPdfCommand = this._pickPdfCommand;
 
             this._analyzeCommand = new AsyncDelegateCommand(AnalyzeAsync, _ => this.IsWorking == false);
@@ -74,11 +81,22 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
             this._displayDataBlockRelation = true;
             this._displayDataBlocks = true;
+
+            this._loggerFactory = LoggerFactory.Create(b => b.AddProvider(new RelayLoggerProvider(OnLog)));
+            this._logger = this._loggerFactory.CreateLogger(string.Empty);
+
+            this._logs = new ObservableCollection<Log>();
+            this.Logs = new ReadOnlyCollection<Log>(this._logs);
         }
 
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Gets the logs.
+        /// </summary>
+        public IReadOnlyCollection<Log> Logs { get; }
 
         public ICommand PickPdfCommand { get; }
 
@@ -179,6 +197,16 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
         #region Methods
 
+        /// <summary>
+        /// Called when log arrived log.
+        /// </summary>
+        private void OnLog(Log log)
+        {
+            UIDispatchHost.Call(() => this._logs.Add(log));
+
+            Debug.WriteLine(log.LogLevel + ":" + log.message);
+        }
+
         private async ValueTask AnalyzeAsync()
         {
             if (this._document == null || string.IsNullOrEmpty(this._pdfFilePath))
@@ -188,8 +216,13 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
             RefreshViewModelState();
             try
             {
-                using (var extractor = new PDFExtractor())
+                using (var extractor = new PDFExtractor(this._loggerFactory))
                 {
+                    this._logger.LogInformation("Start Analyzing {document} {page}/{maxPage}",
+                                                Path.GetFileNameWithoutExtension(this._pdfFilePath),
+                                                this.DisplayPage,
+                                                this.MaxPage);
+
                     var analyzeDoc = await extractor.AnalyseAsync(this._document!,
                                                                   Path.GetFileNameWithoutExtension(this._pdfFilePath)!,
                                                                   options: new PDFExtractorOptions()
@@ -223,6 +256,15 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                     this.DataBlocks = _dataBlocksBasic.Concat(this._relation).ToArray();
                 }
             }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex,
+                                      "Error Analyzing {document} {page}/{maxPage}\n{exception}",
+                                      this._document.GetDocumentInfo().GetTitle(),
+                                      this.DisplayPage,
+                                      this.MaxPage,
+                                      ex);
+            }
             finally
             {
                 Interlocked.Decrement(ref this._workingCounter);
@@ -233,7 +275,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         /// <summary>
         /// 
         /// </summary>
-        private void PickPdf()
+        private async ValueTask PickPdfAsync()
         {
             Interlocked.Increment(ref this._workingCounter);
             RefreshViewModelState();
@@ -251,18 +293,32 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                     this._docReader?.Close();
                     this._document?.Close();
 
-                    this.PdfFilePath = openFileDialog.FileName;
-                    this._docReader = new PdfReader(this._pdfFilePath);
-                    this._document = new iText.Kernel.Pdf.PdfDocument(this._docReader);
-                    this._ironDocument = new IronPdf.PdfDocument(this._pdfFilePath);
-                    OnPropertyChanged(nameof(this.PdfDocument));
+                    this.Page = null;
+                    this._currentPage = null;
 
-                    this._displayPage = 1;
-                    OnPropertyChanged(nameof(this.MaxPage));
-                    OnPropertyChanged(nameof(this.DisplayPage));
+                    this._logger.LogInformation("Openning new file {fileName} ...", Path.GetFileNameWithoutExtension(openFileDialog.FileName));
 
-                    SelectPage(1);
+                    await Task.Run(() =>
+                    {
+                        this.PdfFilePath = openFileDialog.FileName;
+                        this._docReader = new PdfReader(this._pdfFilePath);
+                        this._document = new iText.Kernel.Pdf.PdfDocument(this._docReader);
+                        this._ironDocument = new IronPdf.PdfDocument(this._pdfFilePath);
+                        OnPropertyChanged(nameof(this.PdfDocument));
+
+                        this._displayPage = 1;
+                        OnPropertyChanged(nameof(this.MaxPage));
+                        OnPropertyChanged(nameof(this.DisplayPage));
+
+                        SelectPage(1);
+                    });
                 }
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex,
+                                      "Error Picking file\n{exception}",
+                                      ex);
             }
             finally
             {

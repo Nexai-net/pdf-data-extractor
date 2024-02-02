@@ -1,12 +1,16 @@
 ﻿namespace PDF.Data.Extractor.Strategies
 {
+    using global::Data.Block.Abstractions;
+    using global::Data.Block.Abstractions.MetaData;
+
     using iText.Kernel.Geom;
     using iText.Kernel.Pdf;
     using iText.Kernel.Pdf.Canvas.Parser;
     using iText.Kernel.Pdf.Canvas.Parser.Data;
     using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
-    using global::Data.Block.Abstractions;
+    using Microsoft.Extensions.Logging;
+
     using PDF.Data.Extractor.Extensions;
     using PDF.Data.Extractor.InternalModels;
     using PDF.Data.Extractor.Services;
@@ -15,7 +19,6 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    using System.Numerics;
 
     using Vector = iText.Kernel.Geom.Vector;
 
@@ -29,12 +32,13 @@
 
         private readonly IImageManager _imageManager;
         private readonly IFontManager _fontManager;
-
         private readonly CancellationToken _token;
         private readonly IReadOnlyDictionary<Type, Action<IEventData>> _dataTypeProcessor;
         private readonly Rectangle _pageSize;
         private readonly PdfPage _page;
-        
+
+        private readonly ILogger _logger;
+
         private static readonly ICollection<EventType> s_eventTypeManaged;
 
         private readonly List<DataBlockBuilder> _roots;
@@ -65,8 +69,10 @@
         public DataBlockExtractStrategy(IFontManager fontManager,
                                         IImageManager imageManager,
                                         CancellationToken token,
+                                        ILogger logger,
                                         PdfPage page)
         {
+            this._logger = logger;
             this._token = token;
             this._pageSize = page.GetPageSize();
             this._page = page;
@@ -90,29 +96,36 @@
         {
             this._token.ThrowIfCancellationRequested();
 
-            if (type == EventType.BEGIN_TEXT)
+            try
             {
-                Debug.Assert(data == null);
+                if (type == EventType.BEGIN_TEXT)
+                {
+                    Debug.Assert(data == null);
 
-                var newBlock = new DataBlockBuilder(this._currentBlockBuilder);
+                    var newBlock = new DataBlockBuilder(this._currentBlockBuilder);
 
-                if (this._currentBlockBuilder == null)
-                    this._roots.Add(newBlock);
+                    if (this._currentBlockBuilder == null)
+                        this._roots.Add(newBlock);
 
-                this._currentBlockBuilder = newBlock;
-                return;
+                    this._currentBlockBuilder = newBlock;
+                    return;
+                }
+
+                if (type == EventType.END_TEXT)
+                {
+                    this._currentBlockBuilder = this._currentBlockBuilder?.Parent;
+                    return;
+                }
+
+                if (this._dataTypeProcessor.TryGetValue(data.GetType(), out var builder))
+                {
+                    builder(data);
+                    return;
+                }
             }
-
-            if (type == EventType.END_TEXT)
+            catch (Exception ex)
             {
-                this._currentBlockBuilder = this._currentBlockBuilder?.Parent;
-                return;
-            }
-
-            if (this._dataTypeProcessor.TryGetValue(data.GetType(), out var builder))
-            {
-                builder(data);
-                return;
+                this._logger.LogError(ex, "EventType " + type + " {exception}", ex);
             }
 
             throw new NotImplementedException();
@@ -251,10 +264,11 @@
             var matrix = imgRenderInfo.GetImageCtm();
 
             var img = imgRenderInfo.GetImage();
-            var imgType = img.IdentifyImageType();
-            var rawImg = img.GetImageBytes();
-            var height = img.GetHeight();
-            var width = img.GetWidth();
+            //var imgType = img.IdentifyImageType();
+            //byte[]? rawImg = null;
+
+            //var height = img.GetHeight();
+            //var width = img.GetWidth();
 
             // https://kb.itextpdf.com/itext/how-to-get-the-co-ordinates-of-an-image
             //var matrixX = matrix.Get(Matrix.I31);
@@ -280,7 +294,15 @@
                 EventOccurred(null, EventType.BEGIN_TEXT);
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
-            var metaData = this._imageManager.AddImageResource(img);
+            ImageMetaData? metaData = null;
+            try
+            {
+                metaData = this._imageManager.AddImageResource(img);
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex, "DataImageBlockExtraction : " + imgName + " {exception}", ex);
+            }
 
             this._currentBlockBuilder!.AddImageData(imgName,
                                                     metaData,
