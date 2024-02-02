@@ -15,6 +15,7 @@ namespace PDF.Data.Extractor
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
+    using Microsoft.Extensions.Logging;
 
     /// <summary>
     /// Extract all information and format them in <see cref="DataBlock"/> structure
@@ -22,6 +23,8 @@ namespace PDF.Data.Extractor
     public sealed class PDFExtractor : IDisposable
     {
         #region Fields
+
+        private readonly ILoggerFactory _loggerFactory;
 
         private readonly IDataBlockMergeStrategy[] _defaultMergeStrategies;
 
@@ -37,11 +40,13 @@ namespace PDF.Data.Extractor
         /// Initializes a new instance of the <see cref="PDFExtractor"/> class.
         /// </summary>
         /// <param name="maxSimulaniousParallelAnalyze">Minimum 2</param>
-        public PDFExtractor(IEnumerable<IDataBlockMergeStrategy>? dataBlockMergeStrategies = null,
+        public PDFExtractor(ILoggerFactory loggerFactory, 
+                            IEnumerable<IDataBlockMergeStrategy>? dataBlockMergeStrategies = null,
                             IFontManager? fontManager = null,
                             IImageManager? imageManager = null,
                             uint maxSimulaniousParallelAnalyze = 42)
         {
+            this._loggerFactory = loggerFactory;
             this.FontManager = fontManager ?? new DefaultFontManager();
             this.ImageManager = imageManager ?? new DefaultImageManager();
 
@@ -124,6 +129,8 @@ namespace PDF.Data.Extractor
             var asyncExtraction = options?.Asynchronous ?? true;
             var mergeStrategies = options?.OverrideStrategies?.ToArray() ?? this._defaultMergeStrategies;
 
+            var logger = this._loggerFactory.CreateLogger(documentName);
+
             using (var grpCancelToken = CancellationTokenSource.CreateLinkedTokenSource(this._lifetimeCancellationToken.Token, token))
             {
                 var lastPageNumber = doc.GetNumberOfPages();
@@ -146,6 +153,7 @@ namespace PDF.Data.Extractor
                                                  var page = doc.GetPage(pageNumber);
                                                  return Task.Run(() => AnalysePageAsync(pageNumber,
                                                                                         page,
+                                                                                        logger,
                                                                                         mergeStrategies,
                                                                                         grpCancelToken.Token));
                                              })
@@ -162,6 +170,7 @@ namespace PDF.Data.Extractor
                         token.ThrowIfCancellationRequested();
                         var pageDataBlock = await AnalysePageAsync(pageNumber,
                                                                    page,
+                                                                   logger,
                                                                    mergeStrategies,
                                                                    grpCancelToken.Token);
 
@@ -207,6 +216,7 @@ namespace PDF.Data.Extractor
         /// </summary>
         private async Task<DataPageBlock> AnalysePageAsync(int number,
                                                            PdfPage page,
+                                                           ILogger logger,
                                                            IDataBlockMergeStrategy[] mergeStrategies,
                                                            CancellationToken token)
         {
@@ -217,6 +227,7 @@ namespace PDF.Data.Extractor
                 var strategy = new DataBlockExtractStrategy(this.FontManager,
                                                             this.ImageManager,
                                                             token,
+                                                            logger,
                                                             page);
 
                 var processor = new PdfCanvasProcessor(strategy);

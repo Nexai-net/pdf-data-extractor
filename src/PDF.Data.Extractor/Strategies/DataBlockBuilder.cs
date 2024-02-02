@@ -98,14 +98,13 @@ namespace PDF.Data.Extractor.Strategies
         /// Adds the image data.
         /// </summary>
         public void AddImageData(PdfName imgName,
-                                 ImageMetaData image,
+                                 ImageMetaData? image,
                                  BlockArea area,
                                  IList<CanvasTag> tags)
         {
-
             this._dataBlocks.Add(new DataImageBlock(Guid.NewGuid(),
                                                     imgName.GetValue(),
-                                                    image.Uid,
+                                                    image?.Uid,
                                                     area,
                                                     AnalyzeTags(tags),
                                                     null));

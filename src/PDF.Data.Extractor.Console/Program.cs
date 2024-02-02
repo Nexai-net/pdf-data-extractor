@@ -5,6 +5,8 @@ using CommandLine.Text;
 
 using Data.Block.Abstractions;
 
+using Microsoft.Extensions.Logging;
+
 using PDF.Data.Extractor;
 using PDF.Data.Extractor.Console.Models;
 
@@ -35,7 +37,9 @@ if (commandLine.Tag == ParserResultType.NotParsed)
 
 var timer = new Stopwatch();
 
-using (var docBlockExtractor = new PDFExtractor())
+var consoleLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
+
+using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
 {
     if (commandLine.Value.Timed)
         Console.WriteLine("Document analyse start : " + DateTime.Now);
