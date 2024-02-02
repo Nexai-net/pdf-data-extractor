@@ -8,6 +8,7 @@ using Data.Block.Abstractions;
 using PDF.Data.Extractor;
 using PDF.Data.Extractor.Console.Models;
 
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -32,8 +33,15 @@ if (commandLine.Tag == ParserResultType.NotParsed)
     return;
 }
 
+var timer = new Stopwatch();
+
 using (var docBlockExtractor = new PDFExtractor())
 {
+    if (commandLine.Value.Timed)
+        Console.WriteLine("Document analyse start : " + DateTime.Now);
+
+    timer.Start();
+
     var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!,
                                                         options: new PDFExtractorOptions()
                                                         {
@@ -41,13 +49,13 @@ using (var docBlockExtractor = new PDFExtractor())
                                                             InjectImageMetaData = commandLine.Value.IncludeImages,
                                                         });
 
-    var current = new Uri(Directory.GetCurrentDirectory(), UriKind.Absolute);
+    var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
 
     var output = new Uri(current, commandLine.Value.Output ?? ".");
 
     var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source);
-    if (!string.IsNullOrEmpty(commandLine.Value.OutputName))
-        outputDirName = commandLine.Value.OutputName;
+    if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
+        outputDirName = commandLine.Value.OutputFolderName;
 
     var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
     if (!Directory.Exists(finalDir.LocalPath))
@@ -55,6 +63,9 @@ using (var docBlockExtractor = new PDFExtractor())
         Directory.CreateDirectory(finalDir.LocalPath);
     }
 
+    var pageTimer = new Stopwatch();
+
+    pageTimer.Start();
     if (!commandLine.Value.IncludeImages)
     {
         var imageFolder = Path.Combine(finalDir.LocalPath, "Images");
@@ -77,6 +88,11 @@ using (var docBlockExtractor = new PDFExtractor())
         await Task.WhenAll(saveImageTasks);
     }
 
+    pageTimer.Stop();
+
+    if (commandLine.Value.Timed)
+        Console.WriteLine("Page(s) Analyse number " + (docBlock.Children?.Count ?? 0) + " in " + pageTimer.Elapsed);
+
     var settings = new JsonSerializerOptions()
     {
         WriteIndented = true,
@@ -86,5 +102,18 @@ using (var docBlockExtractor = new PDFExtractor())
 
     var json = JsonSerializer.Serialize<DataDocumentBlock>(docBlock, settings);
 
-    await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, "document.json"), json);
+    var outputFilename = Path.GetFileNameWithoutExtension(commandLine.Value.Source) + ".json";
+
+    if (!string.IsNullOrEmpty(commandLine.Value.OutputName))
+        outputFilename = commandLine.Value.OutputName;
+
+    await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename), json);
+
+    timer.Stop();
+
+    if (commandLine.Value.Timed)
+    {
+        Console.WriteLine("Write analyse output : " + timer.Elapsed);
+        Console.WriteLine("Document analyze end : " + DateTime.Now);
+    }
 }

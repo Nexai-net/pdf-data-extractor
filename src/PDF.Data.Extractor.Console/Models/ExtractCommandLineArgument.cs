@@ -15,11 +15,17 @@
         [Option('n', "outputName", Required = false, HelpText = "Directory name create with extraction result; default is the pdf name without extention")]
         public string? OutputName { get; set; }
 
+        [Option('d', "OutputFolderName", Required = false, HelpText = "Directory name create with extraction result; default is the pdf name without extention")]
+        public string? OutputFolderName { get; set; }
+
         [Option('f', "force", Default = false, Required = false, HelpText = "Override the ouput if already exists")]
         public bool Force { get; set; }
 
         [Option("IncludeImages", Default = false, Required = false, HelpText = "If set to true the image content will be integrated in the result json in bas64")]
         public bool IncludeImages { get; set; }
+
+        [Option('t', "Timed", Default = false, Required = false, HelpText = "Display computation time.")]
+        public bool Timed { get; set; }
 
         #endregion
     }
