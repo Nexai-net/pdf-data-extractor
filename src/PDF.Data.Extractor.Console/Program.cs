@@ -46,12 +46,15 @@ using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
 
     timer.Start();
 
+    var option = new PDFExtractorOptions()
+    {
+        PageRange = Range.StartAt(1),
+        InjectImageMetaData = commandLine.Value.IncludeImages,
+        Asynchronous = !commandLine.Value.PreventParallelProcess,
+    };
+
     var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!,
-                                                        options: new PDFExtractorOptions()
-                                                        {
-                                                            PageRange = Range.StartAt(1),
-                                                            InjectImageMetaData = commandLine.Value.IncludeImages,
-                                                        });
+                                                        options: option);
 
     var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
 
@@ -100,6 +103,8 @@ using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
     var settings = new JsonSerializerOptions()
     {
         WriteIndented = true,
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
     settings.Converters.Add(new JsonStringEnumConverter());

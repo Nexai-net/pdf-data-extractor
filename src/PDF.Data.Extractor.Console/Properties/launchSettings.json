@@ -2,7 +2,7 @@
   "profiles": {
     "PDF.Data.Extractor.Console": {
       "commandName": "Project",
-      "commandLineArgs": "-o \"./\" -s \"C:\\Users\\Mickaelthumerel\\source\\repos\\github\\pdf-data-extractor\\data\\issueTOURING_276_FR.pdf\" -d .result -t"
+      "commandLineArgs": "-o \"./\" -s \"C:\\Users\\Mickaelthumerel\\source\\repos\\github\\pdf-data-extractor\\data\\issueTOURING_276_FR.pdf\" -d .result -t "
     },
     "CommandLine Error": {
       "commandName": "Project"

@@ -25,19 +25,19 @@ namespace Data.Block.Abstractions
         public DataTextBlock(Guid uid,
                              float fontLevel,
                              float pointValue,
-                             float ligneSize,
+                             float lineSize,
                              float scale,
                              float magnitude,
                              string text,
                              Guid fontInfoUid,
                              float spaceWidth,
                              BlockArea area,
-                             IEnumerable<float>? textBoxId,
-                             IEnumerable<DataTag>? tags,
-                             IEnumerable<DataBlock>? children)
+                             IReadOnlyCollection<float>? textBoxIds,
+                             IReadOnlyCollection<DataTag>? tags,
+                             IReadOnlyCollection<DataBlock>? children)
             : base(uid, BlockTypeEnum.Text, area, tags, children)
         {
-            this.LineSize = ligneSize;
+            this.LineSize = lineSize;
             this.FontLevel = fontLevel;
             this.PointValue = pointValue;
             this.Scale = scale;
@@ -45,7 +45,7 @@ namespace Data.Block.Abstractions
             this.Magnitude = magnitude;
             this.FontInfoUid = fontInfoUid;
             this.SpaceWidth = spaceWidth;
-            this.TextBoxIds = textBoxId?.Distinct().ToArray();
+            this.TextBoxIds = textBoxIds?.Distinct().ToArray();
         }
 
         #endregion

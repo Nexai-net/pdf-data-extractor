@@ -25,8 +25,8 @@ namespace Data.Block.Abstractions
                              int number,
                              int rotation,
                              BlockArea area,
-                             IEnumerable<DataRelationBlock> relations,
-                             IEnumerable<DataBlock>? children)
+                             IReadOnlyCollection<DataRelationBlock> relations,
+                             IReadOnlyCollection<DataBlock>? children)
             : base(uid, BlockTypeEnum.Page, area, null, children)
         {
             this.Number = number;

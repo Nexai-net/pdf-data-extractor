@@ -79,9 +79,9 @@ namespace PDF.Data.Extractor.Strategies
                                                                                          source.SpaceWidth,
                                                                                          MergeArea(source.Area, target.Area),
                                                                                          
-                                                                                         (source.TextBoxIds ?? Array.Empty<float>())
+                                                                                         ((source.TextBoxIds ?? Array.Empty<float>())
                                                                                             .Concat(target.TextBoxIds ?? Array.Empty<float>())
-                                                                                            .Distinct(),
+                                                                                            .Distinct())?.ToArray(),
 
                                                                                          MergeTags(source.Tags, target.Tags),
                                                                                          MergeChildren(source.Children, target.Children)),

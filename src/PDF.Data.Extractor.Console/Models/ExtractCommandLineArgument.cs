@@ -27,6 +27,9 @@
         [Option('t', "Timed", Default = false, Required = false, HelpText = "Display computation time.")]
         public bool Timed { get; set; }
 
+        [Option("PreventParallelProcess", Default = false, Required = false, HelpText = "Define if page should be process in parallel or sequential (Parallel reduce processing time but cost more memory).")]
+        public bool PreventParallelProcess { get; set; }
+
         #endregion
     }
 }

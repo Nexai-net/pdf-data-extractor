@@ -15,7 +15,7 @@ namespace Data.Block.Abstractions
     /// Area covert by a block
     /// </summary>
     [DataContract]
-    [DebuggerDisplay("X:{X}, Y:{Y}, Width: {Width}, Height: {Height}")]
+    [DebuggerDisplay("TL: {TopLeft}, TR: {TopRight}, BR: {BottomRight}, BL: {BottomLeft}")]
     public sealed class BlockArea
     {
         #region Ctor

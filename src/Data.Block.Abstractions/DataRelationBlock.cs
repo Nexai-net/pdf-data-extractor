@@ -21,7 +21,7 @@ namespace Data.Block.Abstractions
         public DataRelationBlock(Guid uid,
                                  BlockArea area,
                                  BlockRelationTypeEnum blockRelationType,
-                                 IEnumerable<Guid>? blocksContained)
+                                 IReadOnlyCollection<Guid>? blocksContained)
             : base(uid, BlockTypeEnum.Relation, area, null, null)
         {
             this.BlocksContained = blocksContained?.ToArray();
