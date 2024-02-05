@@ -48,10 +48,14 @@ using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
 
     var option = new PDFExtractorOptions()
     {
-        PageRange = Range.StartAt(1),
+        PageRange = Range.StartAt(0),
         InjectImageMetaData = commandLine.Value.IncludeImages,
         Asynchronous = !commandLine.Value.PreventParallelProcess,
     };
+
+    var pageTimer = new Stopwatch();
+
+    pageTimer.Start();
 
     var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!,
                                                         options: option);
@@ -69,10 +73,20 @@ using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
     {
         Directory.CreateDirectory(finalDir.LocalPath);
     }
+    
+    pageTimer.Stop();
 
-    var pageTimer = new Stopwatch();
+    if (commandLine.Value.Timed)
+    {
+        var nbPages = (docBlock.Children?.Count ?? 0);
+        var total = pageTimer.Elapsed.TotalSeconds;
+        Console.WriteLine("Page(s) Analyse number {0} in {1:N4} sec ({2:N4} sec/page)", nbPages, total, (total / Math.Max(1, nbPages)));
+    }
 
-    pageTimer.Start();
+    var outputTimer = new Stopwatch();
+
+    outputTimer.Start();
+
     if (!commandLine.Value.IncludeImages)
     {
         var imageFolder = Path.Combine(finalDir.LocalPath, "Images");
@@ -95,11 +109,6 @@ using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
         await Task.WhenAll(saveImageTasks);
     }
 
-    pageTimer.Stop();
-
-    if (commandLine.Value.Timed)
-        Console.WriteLine("Page(s) Analyse number " + (docBlock.Children?.Count ?? 0) + " in " + pageTimer.Elapsed);
-
     var settings = new JsonSerializerOptions()
     {
         WriteIndented = true,
@@ -118,11 +127,13 @@ using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
 
     await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename), json);
 
+    outputTimer.Stop();
     timer.Stop();
 
     if (commandLine.Value.Timed)
     {
-        Console.WriteLine("Write analyse output : " + timer.Elapsed);
+        Console.WriteLine("Write analyse output : {0:N4} sec", outputTimer.Elapsed.TotalSeconds);
+        Console.WriteLine("Total : {0:N4}  sec", timer.Elapsed.TotalSeconds);
         Console.WriteLine("Document analyze end : " + DateTime.Now);
     }
 }
