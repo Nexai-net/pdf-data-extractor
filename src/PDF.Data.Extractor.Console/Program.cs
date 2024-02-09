@@ -8,6 +8,7 @@ using Data.Block.Abstractions;
 using Microsoft.Extensions.Logging;
 
 using PDF.Data.Extractor;
+using PDF.Data.Extractor.Console;
 using PDF.Data.Extractor.Console.Models;
 
 using System.Diagnostics;
@@ -35,105 +36,98 @@ if (commandLine.Tag == ParserResultType.NotParsed)
     return;
 }
 
-var timer = new Stopwatch();
+var files = new List<string>();
+
+var cmd = commandLine.Value!;
+
+if (!string.IsNullOrEmpty(cmd.Source))
+    files.Add(cmd.Source);
+
+if (!string.IsNullOrEmpty(cmd.SourceDir))
+{
+    var dirFiles = Directory.GetFiles(cmd.SourceDir,
+                                      "*.pdf",
+                                      cmd.SourceDirRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+
+    files.AddRange(dirFiles);
+}
 
 var consoleLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
 
-using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
+if (commandLine.Value.Timed)
+    Console.WriteLine("Document analyse start : " + DateTime.Now);
+
+var timer = new Stopwatch();
+timer.Start();
+
+var option = new PDFExtractorOptions()
 {
-    if (commandLine.Value.Timed)
-        Console.WriteLine("Document analyse start : " + DateTime.Now);
+    PageRange = Range.StartAt(0),
+    InjectImageMetaData = commandLine.Value.IncludeImages,
+    Asynchronous = !commandLine.Value.PreventParallelProcess,
+};
 
-    timer.Start();
+var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
+var cmdOutput = new Uri((commandLine.Value.Output ?? ".") + "/", UriKind.RelativeOrAbsolute);
 
-    var option = new PDFExtractorOptions()
+var output = cmdOutput.IsAbsoluteUri ? cmdOutput : new Uri(current, cmdOutput.OriginalString ?? ".");
+
+var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source);
+if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
+    outputDirName = commandLine.Value.OutputFolderName;
+
+var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
+if (!Directory.Exists(finalDir.LocalPath))
+{
+    Directory.CreateDirectory(finalDir.LocalPath);
+}
+
+long fileCounter = 0;
+var limitator = new SemaphoreSlim(Math.Max(4, Environment.ProcessorCount * 2));
+
+var processTasks = files.Select((file, indx) =>
+{
+    return Task.Run(async () =>
     {
-        PageRange = Range.StartAt(0),
-        InjectImageMetaData = commandLine.Value.IncludeImages,
-        Asynchronous = !commandLine.Value.PreventParallelProcess,
-    };
+        DocumentExtractorKPI? kpi = null;
+        try
+        {
+            using (limitator.WaitAsync())
+            {
+                Console.WriteLine($"Start processing {file}");
+                kpi = await DocumentExtractorHelper.ExtractDocumentInformationAsync(file, cmd, option, finalDir, indx, consoleLoggerFactory);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("File failed " + file + " exception : " + ex);
+        }
 
-    var pageTimer = new Stopwatch();
+        var counter = Interlocked.Increment(ref fileCounter);
+        Console.WriteLine($"File processed {file} {counter}/{files.Count}");
 
-    pageTimer.Start();
+        return kpi;
 
-    var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!,
-                                                        options: option);
+    });
+}).ToArray();
 
-    var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
+await Task.WhenAll(processTasks);
 
-    var output = new Uri(current, commandLine.Value.Output ?? ".");
+var kpis = processTasks.Where(t => t.IsCompletedSuccessfully && t.Result is not null)
+                       .Select(t => t.Result)
+                       .Aggregate(new DocumentExtractorKPI(0, 0, 0),
+                                  (acc, kpi) => new DocumentExtractorKPI(acc.PageExtractionTime + kpi!.PageExtractionTime,
+                                                                         acc.nbPage + kpi.nbPage,
+                                                                         acc.OutputWriteTime + kpi.OutputWriteTime));
 
-    var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source);
-    if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
-        outputDirName = commandLine.Value.OutputFolderName;
+if (commandLine.Value.Timed)
+{
+    Console.WriteLine("Extract {0} page(s) in total {1:N4} sec. Avg {2:N4} sec / pages",
+                      kpis!.nbPage,
+                      kpis!.PageExtractionTime,
+                      (kpis.PageExtractionTime == 0 ? 0 : (kpis.nbPage / kpis.PageExtractionTime)));
 
-    var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
-    if (!Directory.Exists(finalDir.LocalPath))
-    {
-        Directory.CreateDirectory(finalDir.LocalPath);
-    }
-    
-    pageTimer.Stop();
-
-    if (commandLine.Value.Timed)
-    {
-        var nbPages = (docBlock.Children?.Count ?? 0);
-        var total = pageTimer.Elapsed.TotalSeconds;
-        Console.WriteLine("Page(s) Analyse number {0} in {1:N4} sec ({2:N4} sec/page)", nbPages, total, (total / Math.Max(1, nbPages)));
-    }
-
-    var outputTimer = new Stopwatch();
-
-    outputTimer.Start();
-
-    if (!commandLine.Value.IncludeImages)
-    {
-        var imageFolder = Path.Combine(finalDir.LocalPath, "Images");
-        if (!Directory.Exists(imageFolder))
-            Directory.CreateDirectory(imageFolder);
-
-        var images = docBlockExtractor.ImageManager.GetAll();
-
-        var saveImageTasks = images.Select(img =>
-                                   {
-                                       var bytes = img.RawBase64Data;
-
-                                       if (bytes is null || bytes.Length == 0)
-                                           return Task.CompletedTask;
-
-                                       var raw = Convert.FromBase64String(Encoding.UTF8.GetString(bytes));
-                                       return File.WriteAllBytesAsync(Path.Combine(imageFolder, img.Uid + "." + img.ImageExtension), raw);
-                                   }).ToArray();
-
-        await Task.WhenAll(saveImageTasks);
-    }
-
-    var settings = new JsonSerializerOptions()
-    {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
-    settings.Converters.Add(new JsonStringEnumConverter());
-
-    var json = JsonSerializer.Serialize<DataDocumentBlock>(docBlock, settings);
-
-    var outputFilename = Path.GetFileNameWithoutExtension(commandLine.Value.Source) + ".json";
-
-    if (!string.IsNullOrEmpty(commandLine.Value.OutputName))
-        outputFilename = commandLine.Value.OutputName;
-
-    await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename), json);
-
-    outputTimer.Stop();
-    timer.Stop();
-
-    if (commandLine.Value.Timed)
-    {
-        Console.WriteLine("Write analyse output : {0:N4} sec", outputTimer.Elapsed.TotalSeconds);
-        Console.WriteLine("Total : {0:N4}  sec", timer.Elapsed.TotalSeconds);
-        Console.WriteLine("Document analyze end : " + DateTime.Now);
-    }
+    Console.WriteLine("Write analyse output : {0:N4} sec", kpis!.OutputWriteTime);
+    Console.WriteLine("Total : {0:N4}  sec", timer.Elapsed.TotalSeconds);
+    Console.WriteLine("Document analyze end : " + DateTime.Now);
 }

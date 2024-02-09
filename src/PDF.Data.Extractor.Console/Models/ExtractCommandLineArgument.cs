@@ -9,8 +9,14 @@
         [Option('o', "output", Required = true, HelpText = "Director path where all the datablock will be extract.")]
         public string? Output { get; set; }
 
-        [Option('s', "source", Required = true, HelpText = "Pdf file to extract.")]
+        [Option('s', "source", Required = true, HelpText = "Pdf file to extract.", Group = "SOURCE")]
         public string? Source { get; set; }
+
+        [Option("sourceDir", Required = true, HelpText = "Folder to get all pdf files to extract. (Default search only on top folder)", Group = "SOURCE")]
+        public string? SourceDir { get; set; }
+
+        [Option('r', "recursive", Required = false, HelpText = "Couple with option 'SourceDir' to search through all the sub folder.")]
+        public bool SourceDirRecursive { get; set; }
 
         [Option('n', "outputName", Required = false, HelpText = "Directory name create with extraction result; default is the pdf name without extention")]
         public string? OutputName { get; set; }

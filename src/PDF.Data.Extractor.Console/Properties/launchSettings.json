@@ -6,6 +6,10 @@
     },
     "CommandLine Error": {
       "commandName": "Project"
+    },
+    "MultiFiles": {
+      "commandName": "Project",
+      "commandLineArgs": "-o \"C:\\Tmp\\pdf-data-set\" --sourceDir \"C:\\Tmp\\pdf-data-set\" -d .result -t "
     }
   }
 }
