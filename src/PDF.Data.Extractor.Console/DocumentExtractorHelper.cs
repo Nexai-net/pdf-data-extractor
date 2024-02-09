@@ -28,7 +28,7 @@ namespace PDF.Data.Extractor.Console
                                                                                        ILoggerFactory consoleLoggerFactory)
         {
 
-            using (var tokenSourceTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(50)))
+            using (var tokenSourceTimeout = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
             using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
             {
                 var pageTimer = new Stopwatch();

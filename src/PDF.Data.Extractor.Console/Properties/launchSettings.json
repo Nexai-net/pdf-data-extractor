@@ -10,6 +10,15 @@
     "MultiFiles": {
       "commandName": "Project",
       "commandLineArgs": "-o \"C:\\Tmp\\download-extraction\" --sourceDir \"C:\\Users\\Mickaelthumerel\\Downloads\" -d .result -t -r --silent"
+    },
+    "MultiFile - Light": {
+      "commandName": "Project",
+      "commandLineArgs": "-o \"C:\\Tmp\\pdf-data-set\" --sourceDir \"C:\\Tmp\\pdf-data-set\" -d .result -t -r --silent --MaxConcurrentDocument 3",
+      "hotReloadEnabled": false
+    },
+    "Failed": {
+      "commandName": "Project",
+      "commandLineArgs": "-o C:\\Tmp\\pdf-data-set --sourceDir C:\\Tmp\\pdf-data-set -r -t"
     }
   }
 }

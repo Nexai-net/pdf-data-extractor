@@ -57,8 +57,8 @@ if (cmd.Silent == false)
 if (commandLine.Value.Timed)
     Console.WriteLine("Document analyse start : " + DateTime.Now);
 
-var timer = new Stopwatch();
-timer.Start();
+var totalTimer = new Stopwatch();
+totalTimer.Start();
 
 var option = new PDFExtractorOptions()
 {
@@ -72,7 +72,8 @@ var cmdOutput = new Uri((commandLine.Value.Output ?? ".") + "/", UriKind.Relativ
 
 var output = cmdOutput.IsAbsoluteUri ? cmdOutput : new Uri(current, cmdOutput.OriginalString ?? ".");
 
-var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source);
+var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source) ?? ".extractResult";
+
 if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
     outputDirName = commandLine.Value.OutputFolderName;
 
@@ -82,10 +83,18 @@ if (!Directory.Exists(finalDir.LocalPath))
     Directory.CreateDirectory(finalDir.LocalPath);
 }
 
-Console.WriteLine($"Start extracting {files.Count} file(s).");
-
 long fileCounter = 0;
-var limitator = new SemaphoreSlim(Math.Max(4, Environment.ProcessorCount * 2));
+
+int maxConcurrentDocument = (int)cmd.MaxConcurrentDocument;
+
+if (maxConcurrentDocument == 0)
+    maxConcurrentDocument = Environment.ProcessorCount / 4;
+
+maxConcurrentDocument = Math.Max(1, maxConcurrentDocument);
+
+Console.WriteLine($"Start extracting {files.Count} file(s). MaxConcurrentDocument : {maxConcurrentDocument}");
+
+var limitator = new SemaphoreSlim(maxConcurrentDocument);
 
 var globalLogger = consoleLoggerFactory.CreateLogger("Global");
 
@@ -130,6 +139,8 @@ var processTasks = files.Select((file, indx) =>
 
 await Task.WhenAll(processTasks);
 
+totalTimer.Stop();
+
 var kpis = processTasks.Where(t => t.IsCompletedSuccessfully && t.Result is not null)
                        .Select(t => t.Result)
                        .Aggregate(new DocumentExtractorKPI(0, 0, 0),
@@ -142,9 +153,9 @@ if (commandLine.Value.Timed)
     Console.WriteLine("Extract {0} page(s) in total {1:N4} sec. Avg {2:N4} sec / pages",
                       kpis!.nbPage,
                       kpis!.PageExtractionTime,
-                      (kpis.PageExtractionTime == 0 ? 0 : (kpis.nbPage / kpis.PageExtractionTime)));
+                      (kpis.nbPage == 0 ? 0 : (kpis.PageExtractionTime / kpis.nbPage)));
 
-    Console.WriteLine("Write analyse output : {0:N4} sec", kpis!.OutputWriteTime);
-    Console.WriteLine("Total : {0:N4}  sec", timer.Elapsed.TotalSeconds);
+    Console.WriteLine("Write analyse output in total : {0:N4} sec", kpis!.OutputWriteTime);
+    Console.WriteLine("Total : {0:N4}  sec, avg {1:N4} / documents", totalTimer.Elapsed.TotalSeconds, (files.Count == 0 ? 0 : (kpis.PageExtractionTime / files.Count)));
     Console.WriteLine("Document analyze end : " + DateTime.Now);
 }
