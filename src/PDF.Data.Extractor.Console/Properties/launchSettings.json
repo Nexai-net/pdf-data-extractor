@@ -2,23 +2,7 @@
   "profiles": {
     "PDF.Data.Extractor.Console": {
       "commandName": "Project",
-      "commandLineArgs": "-o \"./\" -s \"C:\\Users\\Mickaelthumerel\\source\\repos\\github\\pdf-data-extractor\\data\\issueTOURING_276_FR.pdf\" -d .result -t "
-    },
-    "CommandLine Error": {
-      "commandName": "Project"
-    },
-    "MultiFiles": {
-      "commandName": "Project",
-      "commandLineArgs": "-o \"C:\\Tmp\\download-extraction\" --sourceDir \"C:\\Users\\Mickaelthumerel\\Downloads\" -d .result -t -r --silent"
-    },
-    "MultiFile - Light": {
-      "commandName": "Project",
-      "commandLineArgs": "-o \"C:\\Tmp\\pdf-data-set\" --sourceDir \"C:\\Tmp\\pdf-data-set\" -d .result -t -r --silent --MaxConcurrentDocument 3",
-      "hotReloadEnabled": false
-    },
-    "Failed": {
-      "commandName": "Project",
-      "commandLineArgs": "-o C:\\Tmp\\pdf-data-set --sourceDir C:\\Tmp\\pdf-data-set -r -t"
+      "commandLineArgs": "-o \"c:\\tmp\\pdf-extraction\" -s \"C:\\Users\\Mickaelthumerel\\Downloads\\Microsoft - C# threading.pdf\" -d .result -t "
     }
   }
 }

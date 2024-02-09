@@ -39,8 +39,8 @@
         [Option("silent", Default = false, Required = false, HelpText = "Only Write minimal process logs")]
         public bool Silent { get; set; }
 
-        [Option("maxConcurrentDocument", Default = false, Required = false, HelpText = "Define number of concurrent document are extract in parallel (default 0 => nb logical processor / 4)")]
-        public uint MaxConcurrentDocument { get; set; }
+        [Option("maxConcurrentDocument", Default = 0, Required = false, HelpText = "Define number of concurrent document are extract in parallel (default 0 => nb logical processor / 4)")]
+        public int MaxConcurrentDocument { get; set; }
 
         #endregion
     }

@@ -103,7 +103,7 @@ namespace PDF.Data.Extractor.Strategies
                                  IList<CanvasTag> tags)
         {
             this._dataBlocks.Add(new DataImageBlock(Guid.NewGuid(),
-                                                    imgName.GetValue(),
+                                                    imgName?.GetValue() ?? string.Empty,
                                                     image?.Uid,
                                                     area,
                                                     AnalyzeTags(tags),

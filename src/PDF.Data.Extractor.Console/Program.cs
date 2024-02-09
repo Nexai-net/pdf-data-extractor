@@ -119,10 +119,6 @@ var processTasks = files.Select((file, indx) =>
                 limitator.Release();
             }
         }
-        catch (OperationCanceledException)
-        {
-
-        }
         catch (Exception ex)
         {
             Console.WriteLine("File failed " + file + " exception : " + ex);
