@@ -65,7 +65,7 @@ namespace PDF.Data.Extractor.Services
         public TextFontMetaData AddOrGetFontInfo(float fontSize, PdfFont font)
         {
             var fontPrg = font.GetFontProgram();
-            var fontName = fontPrg.GetFontNames().GetFontName();
+            var fontName = fontPrg.GetFontNames().GetFontName() ?? "default";
 
             this._locker.EnterReadLock();
             try

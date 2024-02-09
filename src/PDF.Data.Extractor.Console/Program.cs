@@ -3,24 +3,21 @@
 using CommandLine;
 using CommandLine.Text;
 
-using Data.Block.Abstractions;
-
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using PDF.Data.Extractor;
 using PDF.Data.Extractor.Console;
 using PDF.Data.Extractor.Console.Models;
 
 using System.Diagnostics;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 var parser = new Parser(s =>
 {
     s.AutoHelp = true;
     s.AutoVersion = true;
     s.GetoptMode = true;
+    s.CaseSensitive = false;
 });
 
 var commandLine = parser.ParseArguments<ExtractCommandLineArgument>(args);
@@ -52,7 +49,10 @@ if (!string.IsNullOrEmpty(cmd.SourceDir))
     files.AddRange(dirFiles);
 }
 
-var consoleLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
+ILoggerFactory consoleLoggerFactory = NullLoggerFactory.Instance;
+
+if (cmd.Silent == false)
+    consoleLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
 
 if (commandLine.Value.Timed)
     Console.WriteLine("Document analyse start : " + DateTime.Now);
@@ -82,8 +82,12 @@ if (!Directory.Exists(finalDir.LocalPath))
     Directory.CreateDirectory(finalDir.LocalPath);
 }
 
+Console.WriteLine($"Start extracting {files.Count} file(s).");
+
 long fileCounter = 0;
 var limitator = new SemaphoreSlim(Math.Max(4, Environment.ProcessorCount * 2));
+
+var globalLogger = consoleLoggerFactory.CreateLogger("Global");
 
 var processTasks = files.Select((file, indx) =>
 {
@@ -92,19 +96,32 @@ var processTasks = files.Select((file, indx) =>
         DocumentExtractorKPI? kpi = null;
         try
         {
-            using (limitator.WaitAsync())
+            await limitator.WaitAsync();
+
+            try
             {
-                Console.WriteLine($"Start processing {file}");
+                if (cmd.Silent == false)
+                    Console.WriteLine($"Start processing {file}");
+
                 kpi = await DocumentExtractorHelper.ExtractDocumentInformationAsync(file, cmd, option, finalDir, indx, consoleLoggerFactory);
             }
+            finally
+            {
+                limitator.Release();
+            }
+        }
+        catch (OperationCanceledException)
+        {
+
         }
         catch (Exception ex)
         {
             Console.WriteLine("File failed " + file + " exception : " + ex);
+            globalLogger.LogError(ex, "File failed {file} exception : {exception}", file, ex);
         }
 
         var counter = Interlocked.Increment(ref fileCounter);
-        Console.WriteLine($"File processed {file} {counter}/{files.Count}");
+        Console.WriteLine($"[{counter}/{files.Count}] - done - processed {file}");
 
         return kpi;
 

@@ -9,7 +9,7 @@
     },
     "MultiFiles": {
       "commandName": "Project",
-      "commandLineArgs": "-o \"C:\\Tmp\\pdf-data-set\" --sourceDir \"C:\\Tmp\\pdf-data-set\" -d .result -t "
+      "commandLineArgs": "-o \"C:\\Tmp\\download-extraction\" --sourceDir \"C:\\Users\\Mickaelthumerel\\Downloads\" -d .result -t -r --silent"
     }
   }
 }

@@ -126,6 +126,7 @@
             catch (Exception ex)
             {
                 this._logger.LogError(ex, "EventType " + type + " {exception}", ex);
+                return;
             }
 
             throw new NotImplementedException();

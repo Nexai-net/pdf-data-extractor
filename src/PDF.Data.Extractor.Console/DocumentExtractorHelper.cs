@@ -28,12 +28,14 @@ namespace PDF.Data.Extractor.Console
                                                                                        ILoggerFactory consoleLoggerFactory)
         {
 
+            using (var tokenSourceTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(50)))
             using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
             {
                 var pageTimer = new Stopwatch();
                 pageTimer.Start();
 
                 var docBlock = await docBlockExtractor.AnalyseAsync(file,
+                                                                    tokenSourceTimeout.Token,
                                                                     options: option);
 
                 pageTimer.Stop();
@@ -57,8 +59,10 @@ namespace PDF.Data.Extractor.Console
                         if (bytes is null || bytes.Length == 0)
                             return Task.CompletedTask;
 
+                        tokenSourceTimeout.Token.ThrowIfCancellationRequested();
+
                         var raw = Convert.FromBase64String(Encoding.UTF8.GetString(bytes));
-                        return File.WriteAllBytesAsync(Path.Combine(imageFolder, img.Uid + "." + img.ImageExtension), raw);
+                        return File.WriteAllBytesAsync(Path.Combine(imageFolder, img.Uid + "." + img.ImageExtension), raw, tokenSourceTimeout.Token);
                     }).ToArray();
 
                     await Task.WhenAll(saveImageTasks);
@@ -69,6 +73,7 @@ namespace PDF.Data.Extractor.Console
                     WriteIndented = true,
                     PropertyNameCaseInsensitive = true,
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                    NumberHandling = JsonNumberHandling.AllowReadingFromString | JsonNumberHandling.AllowNamedFloatingPointLiterals
                 };
 
                 settings.Converters.Add(new JsonStringEnumConverter());
@@ -85,7 +90,9 @@ namespace PDF.Data.Extractor.Console
                         outputFilename += index;
                 }
 
-                await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename + ".json"), json);
+                tokenSourceTimeout.Token.ThrowIfCancellationRequested();
+
+                await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename + ".json"), json, tokenSourceTimeout.Token);
 
                 outputTimer.Stop();
 

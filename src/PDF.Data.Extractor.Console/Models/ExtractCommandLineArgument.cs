@@ -36,6 +36,9 @@
         [Option("PreventParallelProcess", Default = false, Required = false, HelpText = "Define if page should be process in parallel or sequential (Parallel reduce processing time but cost more memory).")]
         public bool PreventParallelProcess { get; set; }
 
+        [Option("silent", Default = false, Required = false, HelpText = "Only Write minimal process logs")]
+        public bool Silent { get; set; }
+
         #endregion
     }
 }
