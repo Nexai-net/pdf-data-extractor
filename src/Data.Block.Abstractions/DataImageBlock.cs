@@ -27,7 +27,7 @@ namespace Data.Block.Abstractions
                               Guid? imageResourceUid,
                               BlockArea area,
                               IReadOnlyCollection<DataTag> tags,
-                              IEnumerable<DataBlock>? children)
+                              IReadOnlyCollection<DataBlock>? children)
             : base(uid, BlockTypeEnum.Image, area, tags, children)
         {
             this.Name = name;

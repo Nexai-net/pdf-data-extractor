@@ -24,9 +24,9 @@ namespace PDF.Data.Extractor.InternalModels
         /// </summary>
         public DataTextBlockRelationGroup(Guid uid,
                                           BlockArea area,
-                                          IEnumerable<DataTag>? tags,
-                                          IEnumerable<IDataTextBlock>? children)
-            : base(uid, BlockTypeEnum.Relation, area, tags, children?.Cast<DataBlock>())
+                                          IReadOnlyCollection<DataTag>? tags,
+                                          IReadOnlyCollection<IDataTextBlock>? children)
+            : base(uid, BlockTypeEnum.Relation, area, tags, children?.Cast<DataBlock>()?.ToArray())
         {
             var first = children?.FirstOrDefault();
 

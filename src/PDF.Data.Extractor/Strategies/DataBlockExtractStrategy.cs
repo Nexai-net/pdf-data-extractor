@@ -126,6 +126,7 @@
             catch (Exception ex)
             {
                 this._logger.LogError(ex, "EventType " + type + " {exception}", ex);
+                return;
             }
 
             throw new NotImplementedException();
@@ -150,7 +151,7 @@
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
                                                    new BlockPoint(pageSize.GetLeft(), pageSize.GetTop())),
                                      ComputeBlockRelation(pageBlocks, token),
-                                     pageBlocks.OfType<DataBlock>());
+                                     pageBlocks.OfType<DataBlock>()?.ToArray());
         }
 
         /// <inheritdoc />
@@ -164,7 +165,7 @@
         /// <summary>
         /// Computes the block relation.
         /// </summary>
-        private IEnumerable<DataRelationBlock> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks, CancellationToken token)
+        private IReadOnlyCollection<DataRelationBlock> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks, CancellationToken token)
         {
             var createTextCloseGroup = new DataTextBlockProximityStrategy(compareFontInfo: false,
                                                                           horizontalDistanceTolerance: 0.2f,
@@ -192,7 +193,7 @@
                                                                           blockRelation,
                                                                           g.Children!.GetTreeElement(c => c.Children)
                                                                                      .Where(c => c != null && c is DataTextBlock)
-                                                                                     .Select(c => c!.Uid).Distinct()))
+                                                                                     .Select(c => c!.Uid).Distinct()?.ToArray()))
                                        .ToArray();
         }
 

@@ -7,5 +7,10 @@ namespace Data.Block.Abstractions.MetaData
     /// <summary>
     /// Meta Data used to get some font information
     /// </summary>
-    public record class TextFontMetaData(Guid Uid, string Name, float FontSize, float MinWidth, float MaxWidth, float LineSizePoint);
+    public record class TextFontMetaData(Guid Uid,
+                                         string Name,
+                                         float FontSize,
+                                         float MinWidth,
+                                         float MaxWidth,
+                                         float LineSizePoint);
 }

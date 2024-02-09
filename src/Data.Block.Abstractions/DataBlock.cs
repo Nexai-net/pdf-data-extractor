@@ -31,8 +31,8 @@ namespace Data.Block.Abstractions
         protected DataBlock(Guid uid,
                             BlockTypeEnum type,
                             BlockArea area,
-                            IEnumerable<DataTag>? tags,
-                            IEnumerable<DataBlock>? children)
+                            IReadOnlyCollection<DataTag>? tags,
+                            IReadOnlyCollection<DataBlock>? children)
         {
             this.Uid = uid;
             this.Type = type;

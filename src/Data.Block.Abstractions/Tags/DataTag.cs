@@ -5,11 +5,15 @@
 namespace Data.Block.Abstractions.Tags
 {
     using System.Runtime.Serialization;
+    using System.Text.Json.Serialization;
 
     /// <summary>
     /// PDF tag, meta-data link to block
     /// </summary>
     [DataContract]
+    [JsonDerivedType(typeof(DataPropTag), "prop")]
+    [JsonDerivedType(typeof(DataLangTag), "lang")]
+    [JsonDerivedType(typeof(DataRawTag), "raw")]
     public abstract class DataTag
     {
         #region Ctor
@@ -75,7 +79,6 @@ namespace Data.Block.Abstractions.Tags
         {
             return 0;
         }
-
 
         #endregion
     }

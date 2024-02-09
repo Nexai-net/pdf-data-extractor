@@ -229,8 +229,8 @@ namespace PDF.Data.Extractor
                                      this._referentialBlock!.FontInfoUid,
                                      this.SpaceWidth,
                                      GetWorldArea(),
-                                     this.TextBoxIds?.Any() ?? false ? this.TextBoxIds.Distinct() : null,
-                                     this._tags?.Any() ?? false ? this._tags.Where(t => !string.IsNullOrEmpty(t.Raw)).Distinct() : null,
+                                     (this.TextBoxIds?.Any() ?? false ? this.TextBoxIds.Distinct() : null)?.ToArray(),
+                                     (this._tags?.Any() ?? false ? this._tags.Where(t => !string.IsNullOrEmpty(t.Raw)).Distinct() : null)?.ToArray(),
                                      null);
         }
 
@@ -273,15 +273,15 @@ namespace PDF.Data.Extractor
         }
 
         /// <inheritdoc />
-        public IEnumerable<DataTag>? GetTags()
+        public IReadOnlyCollection<DataTag>? GetTags()
         {
             return this._tags;
         }
 
         /// <inheritdoc />
-        public IEnumerable<IDataTextBlock>? GetOrdererChildren()
+        public IReadOnlyCollection<IDataTextBlock>? GetOrdererChildren()
         {
-            return GetBlockOrderByRelativeCoord().Select(kv => kv.Block);
+            return GetBlockOrderByRelativeCoord().Select(kv => kv.Block)?.ToArray();
         }
 
         #region Tools

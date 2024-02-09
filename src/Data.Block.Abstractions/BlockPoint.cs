@@ -12,21 +12,5 @@ namespace Data.Block.Abstractions
     /// </summary>
     [DataContract]
     [DebuggerDisplay("({X}, {Y})")]
-    public readonly struct BlockPoint
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="BlockPoint"/> struct.
-        /// </summary>
-        public BlockPoint(float x, float y)
-        {
-            this.X = x;
-            this.Y = y;
-        }
-
-        [DataMember]
-        public float X { get; }
-
-        [DataMember]
-        public float Y { get; }
-    }
+    public record struct BlockPoint(float X, float Y);
 }

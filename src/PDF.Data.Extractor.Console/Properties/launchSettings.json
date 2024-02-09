@@ -2,10 +2,7 @@
   "profiles": {
     "PDF.Data.Extractor.Console": {
       "commandName": "Project",
-      "commandLineArgs": "-o \"./\" -s \"C:\\Users\\Mickaelthumerel\\source\\repos\\github\\pdf-data-extractor\\data\\issueTOURING_276_FR.pdf\" -d .result -t"
-    },
-    "CommandLine Error": {
-      "commandName": "Project"
+      "commandLineArgs": "-o \"c:\\tmp\\pdf-extraction\" -s \"C:\\Users\\Mickaelthumerel\\Downloads\\Microsoft - C# threading.pdf\" -d .result -t "
     }
   }
 }

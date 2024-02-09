@@ -26,15 +26,15 @@ namespace Data.Block.Abstractions
         public DataDocumentBlock(Guid uid,
                                  string? fileName,
                                  BlockArea area,
-                                 IEnumerable<DataPageBlock> children,
+                                 IReadOnlyCollection<DataBlock> children,
                                  string pdfVersion,
                                  string author,
                                  string keywords,
                                  string producer,
                                  string subject,
                                  string title,
-                                 IEnumerable<TextFontMetaData>? fonts,
-                                 IEnumerable<ImageMetaData>? images)
+                                 IReadOnlyCollection<TextFontMetaData>? fonts,
+                                 IReadOnlyCollection<ImageMetaData>? images)
             : base(uid, BlockTypeEnum.Document, area, null, children)
         {
             this.FileName = fileName;
@@ -42,7 +42,7 @@ namespace Data.Block.Abstractions
             this.Author = author;
             this.Keywords = keywords;
             this.Producer = producer;
-            this.subject = subject;
+            this.Subject = subject;
             this.Title = title;
             this.Fonts = fonts?.ToArray() ?? Array.Empty<TextFontMetaData>();
             this.Images = images?.ToArray() ?? Array.Empty<ImageMetaData>();
@@ -83,10 +83,10 @@ namespace Data.Block.Abstractions
         public string Producer { get; }
 
         /// <summary>
-        /// Gets the subject.
+        /// Gets the Subject.
         /// </summary>
         [DataMember]
-        public string subject { get; }
+        public string Subject { get; }
 
         /// <summary>
         /// Gets the title.
@@ -97,14 +97,14 @@ namespace Data.Block.Abstractions
         /// <summary>
         /// Gets the fonts used in the documents
         /// </summary>
-        [DataMember]
-        public IReadOnlyCollection<TextFontMetaData> Fonts { get; }
+        [DataMember(EmitDefaultValue = false)]
+        public IReadOnlyCollection<TextFontMetaData>? Fonts { get; }
 
         /// <summary>
         /// Gets the images resources
         /// </summary>
-        [DataMember]
-        public IReadOnlyCollection<ImageMetaData> Images { get; }
+        [DataMember(EmitDefaultValue = false)]
+        public IReadOnlyCollection<ImageMetaData>? Images { get; }
 
         #endregion
     }

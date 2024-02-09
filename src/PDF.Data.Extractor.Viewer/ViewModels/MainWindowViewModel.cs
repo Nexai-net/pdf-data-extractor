@@ -228,7 +228,8 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                                                                   options: new PDFExtractorOptions()
                                                                   {
                                                                       //OverrideStrategies = new List<IDataBlockMergeStrategy>(),
-                                                                      PageRange = new Range(this.DisplayPage - 1, this.DisplayPage)
+                                                                      PageRange = new Range(this.DisplayPage - 1, this.DisplayPage),
+                                                                      Asynchronous = false
                                                                   });
 
                     var page = (analyzeDoc.Children ?? Array.Empty<DataBlock>()).OfType<DataPageBlock>().FirstOrDefault();

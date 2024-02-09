@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDF.Data.Extractor.Viewer",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDF.Data.Extractor.Console", "src\PDF.Data.Extractor.Console\PDF.Data.Extractor.Console.csproj", "{727E6FCD-8BD0-44EE-BCB8-2C3245278429}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data.Block.Abstractions.UTests", "tests\Data.Block.Abstractions.UTests\Data.Block.Abstractions.UTests.csproj", "{420834FA-A548-44BF-99E3-3AA6AE43F878}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{727E6FCD-8BD0-44EE-BCB8-2C3245278429}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{727E6FCD-8BD0-44EE-BCB8-2C3245278429}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{727E6FCD-8BD0-44EE-BCB8-2C3245278429}.Release|Any CPU.Build.0 = Release|Any CPU
+		{420834FA-A548-44BF-99E3-3AA6AE43F878}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{420834FA-A548-44BF-99E3-3AA6AE43F878}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{420834FA-A548-44BF-99E3-3AA6AE43F878}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{420834FA-A548-44BF-99E3-3AA6AE43F878}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

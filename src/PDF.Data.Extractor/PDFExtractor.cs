@@ -40,7 +40,7 @@ namespace PDF.Data.Extractor
         /// Initializes a new instance of the <see cref="PDFExtractor"/> class.
         /// </summary>
         /// <param name="maxSimulaniousParallelAnalyze">Minimum 2</param>
-        public PDFExtractor(ILoggerFactory loggerFactory, 
+        public PDFExtractor(ILoggerFactory loggerFactory,
                             IEnumerable<IDataBlockMergeStrategy>? dataBlockMergeStrategies = null,
                             IFontManager? fontManager = null,
                             IImageManager? imageManager = null,
@@ -142,27 +142,72 @@ namespace PDF.Data.Extractor
 
                 token.ThrowIfCancellationRequested();
 
-                var pageBlocks = new DataPageBlock[rangeAbsEnd - rangeAbsStart];
+                DataPageBlock[] pageBlocks;
 
                 if (asyncExtraction)
                 {
-                    var allPages = Enumerable.Range(rangeAbsStart, rangeAbsEnd - rangeAbsStart + 1)
-                                             .Where(pageNumber => pageNumber <= lastPageNumber)
-                                             .Select(pageNumber =>
-                                             {
-                                                 var page = doc.GetPage(pageNumber);
-                                                 return Task.Run(() => AnalysePageAsync(pageNumber,
-                                                                                        page,
-                                                                                        logger,
-                                                                                        mergeStrategies,
-                                                                                        grpCancelToken.Token));
-                                             })
-                                             .ToArray();
+                    var pageCopies = Enumerable.Range(rangeAbsStart, rangeAbsEnd - rangeAbsStart + 1)
+                                               .Where(pageNumber => pageNumber <= lastPageNumber)
+                                               .Select(pageNumber =>
+                                               {
+                                                   byte[] copyBytes;
+
+                                                   using (var memoryStream = new MemoryStream())
+                                                   using (var writer = new PdfWriter(memoryStream))
+                                                   using (var newDoc = new PdfDocument(writer))
+                                                   {
+                                                       var newPages = doc.CopyPagesTo(pageNumber, pageNumber, newDoc);
+
+                                                       foreach (var newPage in newPages)
+                                                           newPage.Flush();
+
+                                                       newDoc.FlushCopiedObjects(doc);
+
+                                                       newDoc.Close();
+                                                       writer.Close();
+
+                                                       copyBytes = memoryStream.ToArray();
+                                                   }
+
+                                                   var copyMemoryStream = new MemoryStream(copyBytes);
+                                                   var reader = new PdfReader(copyMemoryStream);
+                                                   var newDocument = new PdfDocument(reader);
+
+                                                   return (PageNumber: pageNumber, Doc: newDocument, Stream: copyMemoryStream, Writer: reader, Page: newDocument.GetPage(1));
+                                               })
+                                               .ToArray();
+
+                    var allPages = pageCopies.Select(pageInfo =>
+                                              {
+                                                  return Task.Run(async () =>
+                                                  {
+                                                      using (pageInfo.Stream)
+                                                      using (pageInfo.Writer)
+                                                      using (pageInfo.Doc)
+                                                      {
+                                                          var pageResult = await AnalysePageAsync(pageInfo.PageNumber,
+                                                                                                  pageInfo.Page,
+                                                                                                  logger,
+                                                                                                  mergeStrategies,
+                                                                                                  grpCancelToken.Token);
+
+                                                          return (pageResult, pageInfo.PageNumber);
+                                                      }
+                                                  });
+                                              })
+                                              .ToArray();
 
                     await Task.WhenAll(allPages);
+
+                    pageBlocks = allPages.Select(p => p.Result)
+                                         .OrderBy(o => o.PageNumber)
+                                         .Select(kv => kv.pageResult)
+                                         .ToArray();
                 }
                 else
                 {
+                    pageBlocks = new DataPageBlock[rangeAbsEnd - rangeAbsStart];
+
                     for (int pageNumber = rangeAbsStart; pageNumber < rangeAbsEnd; pageNumber++)
                     {
                         var page = doc.GetPage(pageNumber);

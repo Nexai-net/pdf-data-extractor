@@ -3,23 +3,21 @@
 using CommandLine;
 using CommandLine.Text;
 
-using Data.Block.Abstractions;
-
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 using PDF.Data.Extractor;
+using PDF.Data.Extractor.Console;
 using PDF.Data.Extractor.Console.Models;
 
 using System.Diagnostics;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 var parser = new Parser(s =>
 {
     s.AutoHelp = true;
     s.AutoVersion = true;
     s.GetoptMode = true;
+    s.CaseSensitive = false;
 });
 
 var commandLine = parser.ParseArguments<ExtractCommandLineArgument>(args);
@@ -35,89 +33,125 @@ if (commandLine.Tag == ParserResultType.NotParsed)
     return;
 }
 
-var timer = new Stopwatch();
+var files = new List<string>();
 
-var consoleLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
+var cmd = commandLine.Value!;
 
-using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
+if (!string.IsNullOrEmpty(cmd.Source))
+    files.Add(cmd.Source);
+
+if (!string.IsNullOrEmpty(cmd.SourceDir))
 {
-    if (commandLine.Value.Timed)
-        Console.WriteLine("Document analyse start : " + DateTime.Now);
+    var dirFiles = Directory.GetFiles(cmd.SourceDir,
+                                      "*.pdf",
+                                      cmd.SourceDirRecursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
 
-    timer.Start();
+    files.AddRange(dirFiles);
+}
 
-    var docBlock = await docBlockExtractor.AnalyseAsync(commandLine.Value.Source!,
-                                                        options: new PDFExtractorOptions()
-                                                        {
-                                                            PageRange = Range.StartAt(1),
-                                                            InjectImageMetaData = commandLine.Value.IncludeImages,
-                                                        });
+ILoggerFactory consoleLoggerFactory = NullLoggerFactory.Instance;
 
-    var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
+if (cmd.Silent == false)
+    consoleLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
 
-    var output = new Uri(current, commandLine.Value.Output ?? ".");
+if (commandLine.Value.Timed)
+    Console.WriteLine("Document analyse start : " + DateTime.Now);
 
-    var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source);
-    if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
-        outputDirName = commandLine.Value.OutputFolderName;
+var totalTimer = new Stopwatch();
+totalTimer.Start();
 
-    var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
-    if (!Directory.Exists(finalDir.LocalPath))
+var option = new PDFExtractorOptions()
+{
+    PageRange = Range.StartAt(0),
+    InjectImageMetaData = commandLine.Value.IncludeImages,
+    Asynchronous = !commandLine.Value.PreventParallelProcess,
+};
+
+var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
+var cmdOutput = new Uri((commandLine.Value.Output ?? ".") + "/", UriKind.RelativeOrAbsolute);
+
+var output = cmdOutput.IsAbsoluteUri ? cmdOutput : new Uri(current, cmdOutput.OriginalString ?? ".");
+
+var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source) ?? ".extractResult";
+
+if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
+    outputDirName = commandLine.Value.OutputFolderName;
+
+var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
+if (!Directory.Exists(finalDir.LocalPath))
+{
+    Directory.CreateDirectory(finalDir.LocalPath);
+}
+
+long fileCounter = 0;
+
+int maxConcurrentDocument = (int)cmd.MaxConcurrentDocument;
+
+if (maxConcurrentDocument == 0)
+    maxConcurrentDocument = Environment.ProcessorCount / 4;
+
+maxConcurrentDocument = Math.Max(1, maxConcurrentDocument);
+
+Console.WriteLine($"Start extracting {files.Count} file(s). MaxConcurrentDocument : {maxConcurrentDocument}");
+
+var limitator = new SemaphoreSlim(maxConcurrentDocument);
+
+var globalLogger = consoleLoggerFactory.CreateLogger("Global");
+
+var processTasks = files.Select((file, indx) =>
+{
+    return Task.Run(async () =>
     {
-        Directory.CreateDirectory(finalDir.LocalPath);
-    }
+        DocumentExtractorKPI? kpi = null;
+        try
+        {
+            await limitator.WaitAsync();
 
-    var pageTimer = new Stopwatch();
+            try
+            {
+                if (cmd.Silent == false)
+                    Console.WriteLine($"Start processing {file}");
 
-    pageTimer.Start();
-    if (!commandLine.Value.IncludeImages)
-    {
-        var imageFolder = Path.Combine(finalDir.LocalPath, "Images");
-        if (!Directory.Exists(imageFolder))
-            Directory.CreateDirectory(imageFolder);
+                kpi = await DocumentExtractorHelper.ExtractDocumentInformationAsync(file, cmd, option, finalDir, indx, consoleLoggerFactory);
+            }
+            finally
+            {
+                limitator.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("File failed " + file + " exception : " + ex);
+            globalLogger.LogError(ex, "File failed {file} exception : {exception}", file, ex);
+        }
 
-        var images = docBlockExtractor.ImageManager.GetAll();
+        var counter = Interlocked.Increment(ref fileCounter);
+        Console.WriteLine($"[{counter}/{files.Count}] - done - processed {file}");
 
-        var saveImageTasks = images.Select(img =>
-                                   {
-                                       var bytes = img.RawBase64Data;
+        return kpi;
 
-                                       if (bytes is null || bytes.Length == 0)
-                                           return Task.CompletedTask;
+    });
+}).ToArray();
 
-                                       var raw = Convert.FromBase64String(Encoding.UTF8.GetString(bytes));
-                                       return File.WriteAllBytesAsync(Path.Combine(imageFolder, img.Uid + "." + img.ImageExtension), raw);
-                                   }).ToArray();
+await Task.WhenAll(processTasks);
 
-        await Task.WhenAll(saveImageTasks);
-    }
+totalTimer.Stop();
 
-    pageTimer.Stop();
+var kpis = processTasks.Where(t => t.IsCompletedSuccessfully && t.Result is not null)
+                       .Select(t => t.Result)
+                       .Aggregate(new DocumentExtractorKPI(0, 0, 0),
+                                  (acc, kpi) => new DocumentExtractorKPI(acc.PageExtractionTime + kpi!.PageExtractionTime,
+                                                                         acc.nbPage + kpi.nbPage,
+                                                                         acc.OutputWriteTime + kpi.OutputWriteTime));
 
-    if (commandLine.Value.Timed)
-        Console.WriteLine("Page(s) Analyse number " + (docBlock.Children?.Count ?? 0) + " in " + pageTimer.Elapsed);
+if (commandLine.Value.Timed)
+{
+    Console.WriteLine("Extract {0} page(s) in total {1:N4} sec. Avg {2:N4} sec / pages",
+                      kpis!.nbPage,
+                      kpis!.PageExtractionTime,
+                      (kpis.nbPage == 0 ? 0 : (kpis.PageExtractionTime / kpis.nbPage)));
 
-    var settings = new JsonSerializerOptions()
-    {
-        WriteIndented = true,
-    };
-
-    settings.Converters.Add(new JsonStringEnumConverter());
-
-    var json = JsonSerializer.Serialize<DataDocumentBlock>(docBlock, settings);
-
-    var outputFilename = Path.GetFileNameWithoutExtension(commandLine.Value.Source) + ".json";
-
-    if (!string.IsNullOrEmpty(commandLine.Value.OutputName))
-        outputFilename = commandLine.Value.OutputName;
-
-    await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename), json);
-
-    timer.Stop();
-
-    if (commandLine.Value.Timed)
-    {
-        Console.WriteLine("Write analyse output : " + timer.Elapsed);
-        Console.WriteLine("Document analyze end : " + DateTime.Now);
-    }
+    Console.WriteLine("Write analyse output in total : {0:N4} sec", kpis!.OutputWriteTime);
+    Console.WriteLine("Total : {0:N4}  sec, avg {1:N4} / documents", totalTimer.Elapsed.TotalSeconds, (files.Count == 0 ? 0 : (kpis.PageExtractionTime / files.Count)));
+    Console.WriteLine("Document analyze end : " + DateTime.Now);
 }

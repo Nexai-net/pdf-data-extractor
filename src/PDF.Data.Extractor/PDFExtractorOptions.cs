@@ -21,6 +21,7 @@ namespace PDF.Data.Extractor
         public PDFExtractorOptions()
         {
             this.InjectImageMetaData = true;
+            this.Asynchronous = true;
         }
 
         #endregion
