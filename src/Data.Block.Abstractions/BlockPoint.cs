@@ -12,5 +12,11 @@ namespace Data.Block.Abstractions
     /// </summary>
     [DataContract]
     [DebuggerDisplay("({X}, {Y})")]
-    public record struct BlockPoint(float X, float Y);
+    public record struct BlockPoint(float X, float Y)
+    {
+        public static BlockPoint operator+(BlockPoint source, BlockPoint other)
+        {
+            return new BlockPoint(source.X + other.X, source.Y + other.Y);
+        }
+    }
 }

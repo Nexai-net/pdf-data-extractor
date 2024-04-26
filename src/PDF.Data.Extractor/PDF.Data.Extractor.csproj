@@ -2,9 +2,9 @@
 
 	<Import Project="../../SharedSolutionCredential.props" />
 
-	<PropertyGroup>
-		<TargetFramework>net7.0</TargetFramework>
-	</PropertyGroup>
+	<!--<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+	</PropertyGroup>-->
 
 	<ItemGroup>
 		<PackageReference Include="itext7" Version="8.0.2" />

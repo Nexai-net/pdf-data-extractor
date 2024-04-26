@@ -5,6 +5,7 @@
 namespace PDF.Data.Extractor
 {
     using global::Data.Block.Abstractions;
+
     using PDF.Data.Extractor.Services;
 
     using System.Collections.Generic;

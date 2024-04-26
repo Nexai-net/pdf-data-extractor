@@ -11,6 +11,6 @@ namespace Data.Block.Abstractions
     {
         None,
         Group,
-        Next,
+        SectionId,
     }
 }

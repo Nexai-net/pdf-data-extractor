@@ -7,7 +7,7 @@ namespace PDF.Data.Extractor.Extensions
     using System;
     using System.Collections.Generic;
 
-    internal static class EnumerableExtensions
+    public static class EnumerableExtensions
     {
         /// <summary>
         /// Gets the tree element.

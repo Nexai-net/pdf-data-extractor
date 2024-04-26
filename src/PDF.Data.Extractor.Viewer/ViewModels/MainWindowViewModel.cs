@@ -11,6 +11,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
     using Microsoft.Extensions.Logging;
     using Microsoft.Win32;
 
+    using PDF.Data.Extractor.Strategies;
     using PDF.Data.Extractor.Viewer.Models;
     using PDF.Data.Extractor.Viewer.Tools;
 
@@ -23,6 +24,7 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows.Input;
+    using PDF.Data.Extractor.Extensions;
 
     /// <summary>
     /// View model of the main window
@@ -227,7 +229,10 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                                                                   Path.GetFileNameWithoutExtension(this._pdfFilePath)!,
                                                                   options: new PDFExtractorOptions()
                                                                   {
-                                                                      //OverrideStrategies = new List<IDataBlockMergeStrategy>(),
+                                                                      OverrideStrategies = new List<Services.IDataBlockMergeStrategy>()
+                                                                      {
+                                                                          new DataTextBlockOverlapStrategy()
+                                                                      },
                                                                       PageRange = new Range(this.DisplayPage - 1, this.DisplayPage),
                                                                       Asynchronous = false
                                                                   });
@@ -240,6 +245,11 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                         return;
                     }
 
+                    var allIndexItems = (page.Children?.GetTreeElement<DataBlock>(e => e.Children) ?? Array.Empty<DataBlock>())
+                                             .GroupBy(g => g.Uid)
+                                             .Select(g => g.First())
+                                             .ToDictionary(k => k!.Uid);
+
                     this._dataBlocksBasic = (page.Children ?? Array.Empty<DataBlock>())
                                                   .Select(b => new DataBlockViewModel(b)
                                                   {
@@ -248,11 +258,11 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
                                                   .ToArray<IDataBlockViewModel>();
 
                     this._relation = (page.Relations ?? Array.Empty<DataRelationBlock>())
-                                        .Select(b => new DataBlockRelationViewModel(b)
-                                        {
-                                            IsVisible = this.DisplayDataBlockRelation
-                                        })
-                                        .ToArray<IDataBlockViewModel>();
+                                          .Select(b => new DataBlockRelationViewModel(b, b.BlocksContained!.Select(u => allIndexItems[u]).ToArray())
+                                          {
+                                              IsVisible = this.DisplayDataBlockRelation
+                                          })
+                                          .ToArray<IDataBlockViewModel>();
 
                     this.DataBlocks = _dataBlocksBasic.Concat(this._relation).ToArray();
                 }

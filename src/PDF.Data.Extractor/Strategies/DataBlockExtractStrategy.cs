@@ -11,6 +11,8 @@
 
     using Microsoft.Extensions.Logging;
 
+    using Org.BouncyCastle.Asn1.Crmf;
+
     using PDF.Data.Extractor.Extensions;
     using PDF.Data.Extractor.InternalModels;
     using PDF.Data.Extractor.Services;
@@ -19,6 +21,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
+    using System.Text;
 
     using Vector = iText.Kernel.Geom.Vector;
 
@@ -135,13 +138,15 @@
         /// <summary>
         /// Creates the <see cref="DataPageBlock"/> from block analyzed
         /// </summary>
-        public DataPageBlock Compile(int pageNumber,
-                                     CancellationToken token,
-                                     params IDataBlockMergeStrategy[] strategies)
+        public async Task<DataPageBlock> Compile(int pageNumber,
+                                                 CancellationToken token,
+                                                 params IDataBlockMergeStrategy[] strategies)
         {
             var pageSize = this._page.GetPageSize();
 
             var pageBlocks = CompileDataBlocks(strategies, token);
+
+            var relations = await ComputeBlockRelation(pageBlocks, token);
 
             return new DataPageBlock(Guid.NewGuid(),
                                      pageNumber,
@@ -150,7 +155,7 @@
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetBottom()),
                                                    new BlockPoint(pageSize.GetRight(), pageSize.GetTop()),
                                                    new BlockPoint(pageSize.GetLeft(), pageSize.GetTop())),
-                                     ComputeBlockRelation(pageBlocks, token),
+                                     relations,
                                      pageBlocks.OfType<DataBlock>()?.ToArray());
         }
 
@@ -165,36 +170,94 @@
         /// <summary>
         /// Computes the block relation.
         /// </summary>
-        private IReadOnlyCollection<DataRelationBlock> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks, CancellationToken token)
+        private Task<IReadOnlyCollection<DataRelationBlock>> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks,
+                                                                                  CancellationToken token)
         {
             var createTextCloseGroup = new DataTextBlockProximityStrategy(compareFontInfo: false,
                                                                           horizontalDistanceTolerance: 0.2f,
-                                                                          verticalDistanceTolerance: 0.6f,
-                                                                          customCompile: grp => new DataTextBlockRelationGroup(Guid.NewGuid(),
-                                                                                                                               grp.GetWorldArea(),
-                                                                                                                               grp.GetTags(),
-                                                                                                                               grp.GetOrdererChildren()));
-
-            token.ThrowIfCancellationRequested();
-            var globalGrp = new[] { createTextCloseGroup }.Apply(pageBlocks, token, breakOnFirstLoop: false);
-            var grpRelation = ConstructRelationStruct(globalGrp, BlockRelationTypeEnum.Group);
-
-            token.ThrowIfCancellationRequested();
-            return grpRelation;
+                                                                          verticalDistanceTolerance: 0.6f);
+            
+            return ComputeBlockRelation(pageBlocks,
+                                        token,
+                                        //(new DataBlockMergePDFTextBoxStrategy(), BlockRelationTypeEnum.SectionId, "TextBoxId", 0.4f),
+                                        //(new DataTextBlockProximityStrategy(), BlockRelationTypeEnum.Group, "ProximityDefault", 0.7f),
+                                        (new DataTextBlockOverlapStrategy(compareFontInfo: false), BlockRelationTypeEnum.Group, "OverlapWithoutFont", 0.8f));
         }
 
-        private static DataRelationBlock[] ConstructRelationStruct(IReadOnlyCollection<IDataBlock> globalGrp, BlockRelationTypeEnum blockRelation)
+        /// <summary>
+        /// Computes the block relation.
+        /// </summary>
+        private async Task<IReadOnlyCollection<DataRelationBlock>> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks,
+                                                                                        CancellationToken token,
+                                                                                        params (IDataBlockMergeStrategy Strategy,
+                                                                                                BlockRelationTypeEnum BlockRelation,
+                                                                                                string CustomRelationType,
+                                                                                                double Weight)[] groupStrategies)
         {
-            return globalGrp.Where(g => g.Children is not null && g.Children.GetTreeElement(c => c.Children)
-                                                                                       .Where(c => c is not null && c is DataTextBlock)
-                                                                                       .Count() > 1)
-                                       .Select(g => new DataRelationBlock(g.Uid,
-                                                                          g.Area,
-                                                                          blockRelation,
-                                                                          g.Children!.GetTreeElement(c => c.Children)
-                                                                                     .Where(c => c != null && c is DataTextBlock)
-                                                                                     .Select(c => c!.Uid).Distinct()?.ToArray()))
-                                       .ToArray();
+            var allBlocks = pageBlocks.GetTreeElement(b => b.Children)
+                                      .Distinct()
+                                      .OfType<IDataBlock>()
+                                      .ToArray();
+
+            var groupingTasks = groupStrategies.Select(kv =>
+            {
+                return Task.Run(() =>
+                {
+                    // Apply on compile data
+                    var grp = new[] { kv.Strategy }.Apply(allBlocks, token, breakOnFirstLoop: false);
+                    token.ThrowIfCancellationRequested();
+                    return ConstructRelationStruct(grp, kv.BlockRelation, kv.CustomRelationType, kv.Weight);
+                });
+            }).ToArray();
+
+            var relations = (await Task.WhenAll(groupingTasks)).SelectMany(m => m).Distinct().ToArray();
+
+            return relations ?? Array.Empty<DataRelationBlock>();
+        }
+
+        private static IReadOnlyCollection<DataRelationBlock> ConstructRelationStruct(IReadOnlyCollection<IDataBlock> resultStrategyGrp,
+                                                                                      BlockRelationTypeEnum blockRelation,
+                                                                                      string customRelationType,
+                                                                                      double weigth)
+        {
+            if (resultStrategyGrp.Count == 0)
+                return Array.Empty<DataRelationBlock>();
+
+            var grpHost = (DataTextBlockGroup.PullGroupItems(resultStrategyGrp.Count)).ToArray();
+
+            try
+            {
+                var grpQueue = new Queue<DataTextBlockGroup>(grpHost);
+
+                return resultStrategyGrp.OfType<IDataTextBlock>()
+                                        .Where(r => r.Children is not null && r.Children.Any())
+                                        .Select(r =>
+                                        {
+                                            var items = r.Children.GetTreeElement(g => g.Children)
+                                                                  .Append((DataBlock)r)
+                                                                  .Where(c => c!.Children is null)
+                                                                  .GroupBy(k => k!.Uid)
+                                                                  .Select(grp => grp.First())
+                                                                  .ToArray();
+
+                                            var grp = grpQueue.Dequeue();
+
+                                            foreach (var txt in items.OfType<IDataTextBlock>())
+                                                grp.Push(txt);
+
+                                            var compile = grp.Compile();
+
+                                            return new DataRelationBlock(Guid.NewGuid(),
+                                                                         compile.Area,
+                                                                         blockRelation,
+                                                                         customRelationType,
+                                                                         grp.GetOrdererChildren()?.Select(s => s.Uid).ToArray());
+                                        }).ToArray();
+            }
+            finally
+            {
+                DataTextBlockGroup.ReleaseItems(grpHost);
+            }
         }
 
         /// <summary>

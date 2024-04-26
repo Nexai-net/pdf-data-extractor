@@ -21,11 +21,13 @@ namespace Data.Block.Abstractions
         public DataRelationBlock(Guid uid,
                                  BlockArea area,
                                  BlockRelationTypeEnum blockRelationType,
+                                 string customGroupType,
                                  IReadOnlyCollection<Guid>? blocksContained)
             : base(uid, BlockTypeEnum.Relation, area, null, null)
         {
             this.BlocksContained = blocksContained?.ToArray();
             this.BlockRelationType = blockRelationType;
+            this.CustomGroupType = customGroupType;
         }
 
         #endregion
@@ -43,6 +45,12 @@ namespace Data.Block.Abstractions
         /// </summary>
         [DataMember]
         public BlockRelationTypeEnum BlockRelationType { get; }
+
+        /// <summary>
+        /// Gets the type of the custom group.
+        /// </summary>
+        [DataMember]
+        public string CustomGroupType { get; }
 
         #endregion
     }

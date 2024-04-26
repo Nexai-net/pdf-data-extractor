@@ -13,10 +13,12 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         /// <summary>
         /// Initializes a new instance of the <see cref="DataBlockViewModel"/> class.
         /// </summary>
-        public DataBlockRelationViewModel(DataRelationBlock dataBlock)
-            : base(dataBlock)
+        public DataBlockRelationViewModel(DataRelationBlock dataBlock, DataBlock[] dataBlocks)
+            : base(dataBlock, dataBlocks.Select(d => new DataBlockViewModel(d)).ToArray())
         {
-            this.DisplayText = dataBlock.BlockRelationType.ToString() + ": " + (dataBlock.BlocksContained?.Count ?? 0);
+            this.DisplayText = dataBlock.BlockRelationType.ToString() + ": " + dataBlock.CustomGroupType + ": " + (dataBlock.BlocksContained?.Count ?? 0);
+
+            this.GroupText = string.Join("", dataBlocks.OfType<IDataTextBlock>().Select(d => d.Text));
         }
 
         #endregion
@@ -25,6 +27,11 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
         /// <inheritdoc />
         public override string DisplayText { get; }
+
+        /// <summary>
+        /// Gets the group text.
+        /// </summary>
+        public override string GroupText { get; }
 
         #endregion
     }
