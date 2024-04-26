@@ -258,7 +258,8 @@ namespace PDF.Data.Extractor
                                                            PdfPage page,
                                                            ILogger logger,
                                                            IDataBlockMergeStrategy[] mergeStrategies,
-                                                           CancellationToken token)
+                                                           CancellationToken token,
+                                                           IReadOnlyCollection<IDataBlockMergeStrategy>? relationStrategies = null)
         {
             await this._simulaniousAnalyzeLocker.WaitAsync(token);
 

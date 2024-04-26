@@ -138,15 +138,26 @@
         /// <summary>
         /// Creates the <see cref="DataPageBlock"/> from block analyzed
         /// </summary>
+        public Task<DataPageBlock> Compile(int pageNumber,
+                                           CancellationToken token,
+                                           params IDataBlockMergeStrategy[] strategies)
+        {
+            return Compile(pageNumber, token, strategies, Array.Empty<IDataBlockMergeStrategy>());
+        }
+
+        /// <summary>
+        /// Creates the <see cref="DataPageBlock"/> from block analyzed
+        /// </summary>
         public async Task<DataPageBlock> Compile(int pageNumber,
                                                  CancellationToken token,
-                                                 params IDataBlockMergeStrategy[] strategies)
+                                                 IReadOnlyCollection<IDataBlockMergeStrategy> strategies,
+                                                 IReadOnlyCollection<IDataBlockMergeStrategy> relationStrategies)
         {
             var pageSize = this._page.GetPageSize();
 
             var pageBlocks = CompileDataBlocks(strategies, token);
 
-            var relations = await ComputeBlockRelation(pageBlocks, token);
+            var relations = await ComputeBlockRelation(pageBlocks, relationStrategies, token);
 
             return new DataPageBlock(Guid.NewGuid(),
                                      pageNumber,
@@ -171,17 +182,32 @@
         /// Computes the block relation.
         /// </summary>
         private Task<IReadOnlyCollection<DataRelationBlock>> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks,
+                                                                                  IReadOnlyCollection<IDataBlockMergeStrategy> relationStrategies,
                                                                                   CancellationToken token)
         {
-            var createTextCloseGroup = new DataTextBlockProximityStrategy(compareFontInfo: false,
-                                                                          horizontalDistanceTolerance: 0.2f,
-                                                                          verticalDistanceTolerance: 0.6f);
-            
-            return ComputeBlockRelation(pageBlocks,
-                                        token,
-                                        //(new DataBlockMergePDFTextBoxStrategy(), BlockRelationTypeEnum.SectionId, "TextBoxId", 0.4f),
-                                        //(new DataTextBlockProximityStrategy(), BlockRelationTypeEnum.Group, "ProximityDefault", 0.7f),
-                                        (new DataTextBlockOverlapStrategy(compareFontInfo: false), BlockRelationTypeEnum.Group, "OverlapWithoutFont", 0.8f));
+
+
+            IReadOnlyCollection<(IDataBlockMergeStrategy Strategy, BlockRelationTypeEnum BlockRelation, string CustomRelationType, double Weight)> stategies;
+
+            if (relationStrategies is not null && relationStrategies.Any())
+            {
+                stategies = relationStrategies.Select(r => (Strategy: r, BlockRelation: BlockRelationTypeEnum.Group, CustomRelationType: "", Weight: (double)1)).ToArray();
+            }
+            else
+            {
+                var createTextCloseGroup = new DataTextBlockProximityStrategy(compareFontInfo: false,
+                                                              horizontalDistanceTolerance: 0.2f,
+                                                              verticalDistanceTolerance: 0.6f);
+
+                stategies = new (IDataBlockMergeStrategy Strategy, BlockRelationTypeEnum BlockRelation, string CustomRelationType, double Weight)[]
+                {
+                    //(new DataBlockMergePDFTextBoxStrategy(), BlockRelationTypeEnum.SectionId, "TextBoxId", 0.4f),
+                    //(new DataTextBlockProximityStrategy(), BlockRelationTypeEnum.Group, "ProximityDefault", 0.7f),
+                    (new DataTextBlockOverlapStrategy(compareFontInfo: false), BlockRelationTypeEnum.Group, "OverlapWithoutFont", 0.8f)
+                };
+            }
+
+            return ComputeBlockRelation(pageBlocks, token, stategies);
         }
 
         /// <summary>
@@ -189,10 +215,10 @@
         /// </summary>
         private async Task<IReadOnlyCollection<DataRelationBlock>> ComputeBlockRelation(IReadOnlyCollection<IDataBlock> pageBlocks,
                                                                                         CancellationToken token,
-                                                                                        params (IDataBlockMergeStrategy Strategy,
-                                                                                                BlockRelationTypeEnum BlockRelation,
-                                                                                                string CustomRelationType,
-                                                                                                double Weight)[] groupStrategies)
+                                                                                        IReadOnlyCollection<(IDataBlockMergeStrategy Strategy,
+                                                                                                             BlockRelationTypeEnum BlockRelation,
+                                                                                                             string CustomRelationType,
+                                                                                                             double Weight)> groupStrategies)
         {
             var allBlocks = pageBlocks.GetTreeElement(b => b.Children)
                                       .Distinct()
