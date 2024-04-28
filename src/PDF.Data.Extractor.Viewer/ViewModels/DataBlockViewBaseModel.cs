@@ -21,13 +21,14 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
         /// <summary>
         /// Initializes a new instance of the <see cref="DataBlockViewBaseModel"/> class.
         /// </summary>
-        public DataBlockViewBaseModel(TDataBlock dataBlock)
+        public DataBlockViewBaseModel(TDataBlock dataBlock, IReadOnlyCollection<IDataBlockViewModel> children)
         {
             this.DataBlock = dataBlock;
             this.Area = dataBlock.Area;
             this.Type = dataBlock.Type;
 
             this._visible = true;
+            this.Children = children;
         }
 
         #endregion
@@ -41,6 +42,16 @@ namespace PDF.Data.Extractor.Viewer.ViewModels
 
         /// <inheritdoc />
         public abstract string DisplayText { get; }
+
+        /// <summary>
+        /// Gets the children.
+        /// </summary>
+        public IReadOnlyCollection<IDataBlockViewModel> Children { get; }
+
+        /// <summary>
+        /// Gets the group text.
+        /// </summary>
+        public abstract string GroupText { get; }
 
         /// <inheritdoc />
         public BlockArea Area { get; }

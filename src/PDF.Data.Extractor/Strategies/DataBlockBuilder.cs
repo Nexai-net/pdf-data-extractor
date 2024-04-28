@@ -4,25 +4,20 @@
 
 namespace PDF.Data.Extractor.Strategies
 {
-    using iText.IO.Image;
-    using iText.Kernel.Geom;
-    using iText.Kernel.Pdf;
-    using iText.Kernel.Pdf.Canvas;
-    using iText.Layout.Element;
-    using Newtonsoft.Json.Linq;
-
     using global::Data.Block.Abstractions;
     using global::Data.Block.Abstractions.MetaData;
     using global::Data.Block.Abstractions.Tags;
+
+    using iText.IO.Image;
+    using iText.Kernel.Pdf;
+    using iText.Kernel.Pdf.Canvas;
+
     using PDF.Data.Extractor.Services;
 
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Globalization;
     using System.Linq;
-    using System.Text;
-    using System.Text.RegularExpressions;
 
     /// <summary>
     /// Build information about a data block
@@ -59,6 +54,22 @@ namespace PDF.Data.Extractor.Strategies
         /// Gets the parent.
         /// </summary>
         public DataBlockBuilder? Parent { get; }
+
+        /// <summary>
+        /// Gets the blocks.
+        /// </summary>
+        public IReadOnlyCollection<DataBlock> Blocks
+        {
+            get { return this._dataBlocks; }
+        }
+
+        /// <summary>
+        /// Gets the block builders.
+        /// </summary>
+        public IReadOnlyCollection<DataBlockBuilder> BlockBuilders
+        {
+            get { return this._children; }
+        }
 
         #endregion
 

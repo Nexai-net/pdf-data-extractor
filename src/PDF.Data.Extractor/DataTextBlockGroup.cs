@@ -8,6 +8,7 @@ namespace PDF.Data.Extractor
     using global::Data.Block.Abstractions.Tags;
 
     using System;
+    using System.Diagnostics;
     using System.Numerics;
     using System.Text;
 
@@ -16,7 +17,10 @@ namespace PDF.Data.Extractor
     /// </summary>
     public sealed class DataTextBlockGroup
     {
-        #region Properties
+        #region Fields
+
+        private static readonly Queue<DataTextBlockGroup> s_groupPool;
+        private static readonly SemaphoreSlim s_locker;
 
         private readonly List<IDataTextBlock> _blocks;
         private IReadOnlyCollection<DataTag>? _tags;
@@ -45,6 +49,15 @@ namespace PDF.Data.Extractor
         #endregion
 
         #region Ctor
+
+        /// <summary>
+        /// Initializes the <see cref="DataTextBlockGroup"/> class.
+        /// </summary>
+        static DataTextBlockGroup()
+        {
+            s_groupPool = new Queue<DataTextBlockGroup>(Enumerable.Range(0, 2000).Select(_ => new DataTextBlockGroup()));
+            s_locker = new SemaphoreSlim(1);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataTextBlockGroup"/> class.
@@ -142,6 +155,14 @@ namespace PDF.Data.Extractor
             get { return Interlocked.Read(ref this._using) != 0; }
         }
 
+        /// <summary>
+        /// Gets the block origin.
+        /// </summary>
+        public BlockPoint? Origin
+        {
+            get { return this._topLeftOriginPoint; }
+        }
+
         #endregion
 
         #region Methods
@@ -203,11 +224,13 @@ namespace PDF.Data.Extractor
             if (blocks.Count == 0 || blocks.Count == 1)
                 return blocks.FirstOrDefault().Block;
 
+            var children = new List<DataBlock>(blocks.Count);
             var sb = new StringBuilder();
 
             float? lastY = null;
             foreach (var block in blocks)
             {
+                children.Add((DataBlock)block.Block);
                 if (lastY is not null)
                 {
                     var yDiff = block.RelArea.TopLeft.Y - lastY;
@@ -231,7 +254,7 @@ namespace PDF.Data.Extractor
                                      GetWorldArea(),
                                      (this.TextBoxIds?.Any() ?? false ? this.TextBoxIds.Distinct() : null)?.ToArray(),
                                      (this._tags?.Any() ?? false ? this._tags.Where(t => !string.IsNullOrEmpty(t.Raw)).Distinct() : null)?.ToArray(),
-                                     null);
+                                     children);
         }
 
         /// <summary>
@@ -273,6 +296,15 @@ namespace PDF.Data.Extractor
         }
 
         /// <inheritdoc />
+        public BlockArea GetLocalArea()
+        {
+            return new BlockArea(new BlockPoint(this._topLeftRel.X, this._topLeftRel.Y),
+                                 new BlockPoint(this._topRightRel.X, this._topRightRel.Y),
+                                 new BlockPoint(this._bottomRightRel.X, this._bottomRightRel.Y),
+                                 new BlockPoint(this._bottomLeftRel.X, this._bottomLeftRel.Y));
+        }
+
+        /// <inheritdoc />
         public IReadOnlyCollection<DataTag>? GetTags()
         {
             return this._tags;
@@ -282,6 +314,63 @@ namespace PDF.Data.Extractor
         public IReadOnlyCollection<IDataTextBlock>? GetOrdererChildren()
         {
             return GetBlockOrderByRelativeCoord().Select(kv => kv.Block)?.ToArray();
+        }
+
+        /// <summary>
+        /// Pulls the group items.
+        /// </summary>
+        public static IList<DataTextBlockGroup> PullGroupItems(int quantity)
+        {
+            s_locker.Wait();
+            try
+            {
+                var items = new List<DataTextBlockGroup>();
+
+                for (int i = 0; i < quantity; ++i)
+                {
+                    DataTextBlockGroup? item;
+                    if (s_groupPool.Count > 0)
+                    {
+                        item = s_groupPool.Dequeue();
+                    }
+                    else
+                    {
+                        item = new DataTextBlockGroup();
+                    }
+
+                    Debug.Assert(item.IsUsed == false);
+
+                    item.Initialize();
+                    items.Add(item);
+                }
+
+                return items;
+            }
+            finally
+            {
+                s_locker.Release();
+            }
+        }
+
+        /// <summary>
+        /// Releases the items.
+        /// </summary>
+        public static void ReleaseItems(params DataTextBlockGroup[] dataBlockGroups)
+        {
+            s_locker.Wait();
+            try
+            {
+                foreach (var grp in dataBlockGroups)
+                {
+                    grp.Clear();
+                    Debug.Assert(grp.IsUsed == false);
+                    s_groupPool.Enqueue(grp);
+                }
+            }
+            finally
+            {
+                s_locker.Release();
+            }
         }
 
         #region Tools
@@ -309,8 +398,8 @@ namespace PDF.Data.Extractor
                 this._leftLineUnit = Vector2.Normalize(this.LeftLine);
 
                 this._toWorldMatrix = new Matrix3x2(this._topLineUnit.Value.X, this._leftLineUnit.Value.X,
-                                                   this._topLineUnit.Value.Y, this._leftLineUnit.Value.Y,
-                                                   0, 0);
+                                                    this._topLineUnit.Value.Y, this._leftLineUnit.Value.Y,
+                                                    0, 0);
 
                 if (this._toWorldMatrix.IsIdentity)
                     this._toRelativeMatrix = this._toWorldMatrix;

@@ -16,7 +16,7 @@
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" MaxWidth="450" />
             <ColumnDefinition Width="5px" />
             <ColumnDefinition />
             <ColumnDefinition Width="5px" />
@@ -31,7 +31,6 @@
         <!-- Menu -->
         <Grid Grid.Column="0" 
               MinWidth="250"
-              MaxWidth="350"
               Margin="5"
               Background="#AAAAAA">
 
@@ -40,8 +39,9 @@
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
                 <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
-                <RowDefinition />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="5px" />
+                <RowDefinition Height="Auto" MinHeight="150" />
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
@@ -66,7 +66,7 @@
                         Content=" Analyze " />
             </Grid>
 
-            <CheckBox Content="Auto analyze when page change" Grid.Row="1"
+            <CheckBox Grid.Row="1" Content="Auto analyze when page change" 
                       HorizontalAlignment="Right"
                       Margin="5"
                       IsChecked="{Binding AutoAnalyzeWhenChangePage, Mode=TwoWay}"/>
@@ -129,22 +129,63 @@
                     <Run Text="{Binding DataBlocks.Count, Mode=OneWay}" />
                 </TextBlock>
 
-                <ListView ItemsSource="{Binding DataBlocks}"
-                          Height="450"
+                <TreeView ItemsSource="{Binding DataBlocks}"
+                          MinHeight="450"
                           Grid.Row="1"
+                          x:Name="BlockSelector"
                           Margin="5">
-                    <ListView.Resources>
+                    <TreeView.Resources>
                         <Style TargetType="ListViewItem">
                             <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
                         </Style>
-                    </ListView.Resources>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
+                    </TreeView.Resources>
+                    <TreeView.ItemTemplate>
+                        <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                             <TextBlock Text="{Binding DisplayText}"
-                                       ToolTip="{Binding Area}"/>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                                       ToolTip="{Binding GroupText}"/>
+                        </HierarchicalDataTemplate>
+                    </TreeView.ItemTemplate>
+                </TreeView>
+            </Grid>
+
+            <GridSplitter  Grid.Row="5" 
+                           HorizontalAlignment="Stretch" 
+                           VerticalAlignment="Center" 
+                           Height="3px" 
+                           Background="Black"/>
+
+            <Grid Grid.Row="6" Margin="5"
+                  DataContext="{Binding SelectedItem, ElementName=BlockSelector}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <TextBlock Text="Properties" FontSize="18" />
+
+                <Grid Grid.Row="1" Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto" />
+                        <RowDefinition Height="auto" />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBlock Text="Area" Margin="5" />
+                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Margin="5" >
+                        <Run Text="{Binding Area.TopLeft, Mode=OneWay}" />
+                        <LineBreak />
+                        <Run Text="{Binding Area.TopRight, Mode=OneWay}" />
+                        <LineBreak />
+                        <Run Text="{Binding Area.BottomRight, Mode=OneWay}" />
+                        <LineBreak />
+                        <Run Text="{Binding Area.BottomLeft, Mode=OneWay}" />
+                    </TextBlock>
+                </Grid>
             </Grid>
         </Grid>
 

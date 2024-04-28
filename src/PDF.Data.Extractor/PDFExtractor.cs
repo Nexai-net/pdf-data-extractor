@@ -52,12 +52,7 @@ namespace PDF.Data.Extractor
 
             this._defaultMergeStrategies = dataBlockMergeStrategies?.ToArray() ?? new IDataBlockMergeStrategy[]
             {
-                //new DataTextBlockHorizontalSiblingMergeStrategy(this.FontManager),
-                //new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: false),
-                //new DataTextBlockVerticalSiblingMergeStrategy(this.FontManager, alignRight: true)
-
-                new DataTextBlockProximityStrategy()
-                            // Align by center
+                new DataTextBlockOverlapStrategy()
             };
 
             this._lifetimeCancellationToken = new CancellationTokenSource();
@@ -263,7 +258,8 @@ namespace PDF.Data.Extractor
                                                            PdfPage page,
                                                            ILogger logger,
                                                            IDataBlockMergeStrategy[] mergeStrategies,
-                                                           CancellationToken token)
+                                                           CancellationToken token,
+                                                           IReadOnlyCollection<IDataBlockMergeStrategy>? relationStrategies = null)
         {
             await this._simulaniousAnalyzeLocker.WaitAsync(token);
 
@@ -278,9 +274,9 @@ namespace PDF.Data.Extractor
                 var processor = new PdfCanvasProcessor(strategy);
                 processor.ProcessPageContent(page);
 
-                var pageBlock = strategy.Compile(number,
-                                                 token,
-                                                 mergeStrategies);
+                var pageBlock = await strategy.Compile(number,
+                                                       token,
+                                                       mergeStrategies);
                 return pageBlock;
             }
             finally
