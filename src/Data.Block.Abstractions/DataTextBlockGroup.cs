@@ -2,10 +2,9 @@
 // The Democrite licenses this file to you under the MIT license.
 // Produce by nexai & community (cf. docs/Teams.md)
 
-namespace PDF.Data.Extractor
+namespace Data.Block.Abstractions
 {
-    using global::Data.Block.Abstractions;
-    using global::Data.Block.Abstractions.Tags;
+    using Data.Block.Abstractions.Tags;
 
     using System;
     using System.Diagnostics;
@@ -234,7 +233,7 @@ namespace PDF.Data.Extractor
                 if (lastY is not null)
                 {
                     var yDiff = block.RelArea.TopLeft.Y - lastY;
-                    if (yDiff > 0 && yDiff > (this.LineSize / 2.0f))
+                    if (yDiff > 0 && yDiff > this.LineSize / 2.0f)
                         sb.AppendLine();
                 }
 
@@ -268,7 +267,8 @@ namespace PDF.Data.Extractor
             var limitYMin = this._topLeftRel.Y;
             var limitYMax = this._bottomLeftRel.Y;
 
-            return (topLeft.Y >= limitYMin && topLeft.Y <= limitYMax) || (bottomLeft.Y >= limitYMin && bottomLeft.Y <= limitYMax);
+            return (topLeft.Y >= limitYMin && topLeft.Y <= limitYMax) || 
+                   (bottomLeft.Y >= limitYMin && bottomLeft.Y <= limitYMax);
         }
 
         /// <summary>
@@ -282,8 +282,10 @@ namespace PDF.Data.Extractor
             var limitXMin = this._topLeftRel.X;
             var limitXMax = this._topRightRel.X;
 
-            return (topLeft.X >= limitXMin && topLeft.X <= limitXMax) || (topRight.X >= limitXMin && topRight.X <= limitXMax) ||
-                   (limitXMin >= topLeft.X && limitXMin <= topRight.X) || (limitXMax >= topLeft.X && limitXMax <= topRight.X);
+            return (topLeft.X >= limitXMin && topLeft.X <= limitXMax) || 
+                   (topRight.X >= limitXMin && topRight.X <= limitXMax) ||
+                   (limitXMin >= topLeft.X && limitXMin <= topRight.X) || 
+                   (limitXMax >= topLeft.X && limitXMax <= topRight.X);
         }
 
         /// <inheritdoc />
@@ -326,17 +328,11 @@ namespace PDF.Data.Extractor
             {
                 var items = new List<DataTextBlockGroup>();
 
-                for (int i = 0; i < quantity; ++i)
+                for (var i = 0; i < quantity; ++i)
                 {
-                    DataTextBlockGroup? item;
-                    if (s_groupPool.Count > 0)
-                    {
-                        item = s_groupPool.Dequeue();
-                    }
-                    else
-                    {
-                        item = new DataTextBlockGroup();
-                    }
+                    var item = s_groupPool.Count > 0 
+                                    ? s_groupPool.Dequeue() 
+                                    : new DataTextBlockGroup();
 
                     Debug.Assert(item.IsUsed == false);
 
@@ -450,11 +446,11 @@ namespace PDF.Data.Extractor
             this.LineSize = lineSize;
             this.SpaceWidth = spaceWith;
 
-            float minX = float.MaxValue;
-            float minY = float.MaxValue;
+            var minX = float.MaxValue;
+            var minY = float.MaxValue;
 
-            float maxX = float.MinValue;
-            float maxY = float.MinValue;
+            var maxX = float.MinValue;
+            var maxY = float.MinValue;
 
             foreach (var point in relativeBlockPoints.SelectMany(r => r.RelArea.GetPoints()))
             {
