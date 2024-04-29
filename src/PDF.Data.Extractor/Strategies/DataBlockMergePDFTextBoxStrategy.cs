@@ -4,6 +4,8 @@
 
 namespace PDF.Data.Extractor.Strategies
 {
+    using global::Data.Block.Abstractions;
+
     using System;
     using System.Linq;
 
