@@ -8,6 +8,7 @@ namespace Data.Block.Abstractions
 
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Linq;
     using System.Runtime.Serialization;
 
@@ -16,6 +17,8 @@ namespace Data.Block.Abstractions
     /// </summary>
     /// <seealso cref="DataBlock" />
     [DataContract]
+    [Serializable]
+    [ImmutableObject(true)]
     public sealed class DataDocumentBlock : DataBlock
     {
         #region Ctor
@@ -97,13 +100,13 @@ namespace Data.Block.Abstractions
         /// <summary>
         /// Gets the fonts used in the documents
         /// </summary>
-        [DataMember(EmitDefaultValue = false)]
+        [DataMember()]
         public IReadOnlyCollection<TextFontMetaData>? Fonts { get; }
 
         /// <summary>
         /// Gets the images resources
         /// </summary>
-        [DataMember(EmitDefaultValue = false)]
+        [DataMember()]
         public IReadOnlyCollection<ImageMetaData>? Images { get; }
 
         #endregion

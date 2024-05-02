@@ -4,6 +4,7 @@
 
 namespace Data.Block.Abstractions
 {
+    using System.ComponentModel;
     using System.Runtime.Serialization;
 
     /// <summary>
@@ -11,6 +12,8 @@ namespace Data.Block.Abstractions
     /// </summary>
     /// <seealso cref="DataBlock" />
     [DataContract]
+    [Serializable]
+    [ImmutableObject(true)]
     public sealed class DataRelationBlock : DataBlock
     {
         #region Ctor

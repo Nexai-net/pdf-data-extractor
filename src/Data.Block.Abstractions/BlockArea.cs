@@ -5,6 +5,7 @@
 namespace Data.Block.Abstractions
 {
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Diagnostics;
     using System.Numerics;
     using System.Runtime.Serialization;
@@ -14,6 +15,8 @@ namespace Data.Block.Abstractions
     /// Area covert by a block
     /// </summary>
     [DataContract]
+    [Serializable]
+    [ImmutableObject(true)]
     [DebuggerDisplay("ToString()")]
     public sealed class BlockArea
     {

@@ -6,6 +6,7 @@ namespace Data.Block.Abstractions
 {
     using System;
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Linq;
     using System.Runtime.Serialization;
 
@@ -14,6 +15,8 @@ namespace Data.Block.Abstractions
     /// </summary>
     /// <seealso cref="DataBlock" />
     [DataContract]
+    [Serializable]
+    [ImmutableObject(true)]
     public sealed class DataPageBlock : DataBlock
     {
         #region Ctor

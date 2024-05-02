@@ -7,6 +7,7 @@ namespace Data.Block.Abstractions
     using Data.Block.Abstractions.Tags;
 
     using System.Collections.Generic;
+    using System.ComponentModel;
     using System.Diagnostics;
     using System.Runtime.Serialization;
 
@@ -14,6 +15,8 @@ namespace Data.Block.Abstractions
     /// Represent a data block containing text information
     /// </summary>
     [DataContract]
+    [Serializable]
+    [ImmutableObject(true)]
     [DebuggerDisplay("{Text}")]
     public sealed class DataTextBlock : DataBlock, IDataTextBlock
     {
@@ -103,7 +106,7 @@ namespace Data.Block.Abstractions
         /// <summary>
         /// Gets the text box identifier.
         /// </summary>
-        [DataMember(EmitDefaultValue = false)]
+        [DataMember()]
         public IReadOnlyCollection<float>? TextBoxIds { get; }
 
         #endregion
