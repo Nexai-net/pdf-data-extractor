@@ -47,8 +47,11 @@ Copyright (C) 2024 PDF.Data.Extractor.Console
 PDF.Data.Extractor.Console 1.0.0
 Copyright (c) Nexai.net
 
-  -o, --output                Required. Director path where all the datablock
-                              will be extract.
+  -o, --output                (Group: OUTPUT) Director path where all the
+                              datablock will be extract.
+
+  --OutputSideFiles           (Group: OUTPUT) (Default: false) The result must
+                              be set side to the origin file.
 
   -s, --source                (Group: SOURCE) Pdf file to extract.
 
@@ -69,6 +72,9 @@ Copyright (c) Nexai.net
 
   --IncludeImages             (Default: false) If set to true the image content
                               will be integrated in the result json in bas64
+
+  --SkipExtractImages         (Default: false) If set to true the image will be
+                              skipped.
 
   -t, --Timed                 (Default: false) Display computation time.
 
