@@ -6,8 +6,11 @@
     {
         #region Properties
 
-        [Option('o', "output", Required = true, HelpText = "Director path where all the datablock will be extract.")]
+        [Option('o', "output", Required = true, HelpText = "Director path where all the datablock will be extract.", Group = "OUTPUT")]
         public string? Output { get; set; }
+
+        [Option("OutputSideFiles", Default = false, Required = true, HelpText = "The result must be set side to the origin file.", Group = "OUTPUT")]
+        public bool OutputSideFiles { get; set; }
 
         [Option('s', "source", Required = true, HelpText = "Pdf file to extract.", Group = "SOURCE")]
         public string? Source { get; set; }

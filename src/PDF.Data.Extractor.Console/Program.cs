@@ -68,20 +68,28 @@ var option = new PDFExtractorOptions()
     SkipExtractImages = commandLine.Value.SkipExtractImages,
 };
 
-var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
-var cmdOutput = new Uri((commandLine.Value.Output ?? ".") + "/", UriKind.RelativeOrAbsolute);
+Uri? finalDir = null;
 
-var output = cmdOutput.IsAbsoluteUri ? cmdOutput : new Uri(current, cmdOutput.OriginalString ?? ".");
-
-var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source) ?? ".extractResult";
-
-if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
-    outputDirName = commandLine.Value.OutputFolderName;
-
-var finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
-if (!Directory.Exists(finalDir.LocalPath))
+/* 
+ * Managed output dir
+ */
+if (!commandLine.Value.OutputSideFiles)
 {
-    Directory.CreateDirectory(finalDir.LocalPath);
+    var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);
+    var cmdOutput = new Uri((commandLine.Value.Output ?? ".") + "/", UriKind.RelativeOrAbsolute);
+
+    var output = cmdOutput.IsAbsoluteUri ? cmdOutput : new Uri(current, cmdOutput.OriginalString ?? ".");
+
+    var outputDirName = Path.GetFileNameWithoutExtension(commandLine.Value.Source) ?? ".extractResult";
+
+    if (!string.IsNullOrEmpty(commandLine.Value.OutputFolderName))
+        outputDirName = commandLine.Value.OutputFolderName;
+
+    finalDir = new Uri(Path.Combine(output.LocalPath, outputDirName!));
+    if (!Directory.Exists(finalDir.LocalPath))
+    {
+        Directory.CreateDirectory(finalDir.LocalPath);
+    }
 }
 
 long fileCounter = 0;
