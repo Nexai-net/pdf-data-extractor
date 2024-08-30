@@ -30,6 +30,9 @@
         [Option("IncludeImages", Default = false, Required = false, HelpText = "If set to true the image content will be integrated in the result json in bas64")]
         public bool IncludeImages { get; set; }
 
+        [Option("SkipExtractImages", Default = false, Required = false, HelpText = "If set to true the image will be skipped.")]
+        public bool SkipExtractImages { get; set; }
+
         [Option('t', "Timed", Default = false, Required = false, HelpText = "Display computation time.")]
         public bool Timed { get; set; }
 

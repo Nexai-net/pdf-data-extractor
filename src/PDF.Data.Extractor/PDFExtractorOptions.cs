@@ -51,6 +51,11 @@ namespace PDF.Data.Extractor
         /// </summary>
         public bool InjectImageMetaData { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether If the image will be skipped.
+        /// </summary>
+        public bool SkipExtractImages { get; set; }
+
         #endregion
     }
 }

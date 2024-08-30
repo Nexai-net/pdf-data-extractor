@@ -65,6 +65,7 @@ var option = new PDFExtractorOptions()
     PageRange = Range.StartAt(0),
     InjectImageMetaData = commandLine.Value.IncludeImages,
     Asynchronous = !commandLine.Value.PreventParallelProcess,
+    SkipExtractImages = commandLine.Value.SkipExtractImages,
 };
 
 var current = new Uri(Directory.GetCurrentDirectory() + "/", UriKind.Absolute);

@@ -182,6 +182,7 @@ namespace PDF.Data.Extractor
                                                       {
                                                           var pageResult = await AnalysePageAsync(pageInfo.PageNumber,
                                                                                                   pageInfo.Page,
+                                                                                                  options?.SkipExtractImages ?? false,
                                                                                                   logger,
                                                                                                   mergeStrategies,
                                                                                                   grpCancelToken.Token);
@@ -210,6 +211,7 @@ namespace PDF.Data.Extractor
                         token.ThrowIfCancellationRequested();
                         var pageDataBlock = await AnalysePageAsync(pageNumber,
                                                                    page,
+                                                                   options?.SkipExtractImages ?? false,
                                                                    logger,
                                                                    mergeStrategies,
                                                                    grpCancelToken.Token);
@@ -256,6 +258,7 @@ namespace PDF.Data.Extractor
         /// </summary>
         private async Task<DataPageBlock> AnalysePageAsync(int number,
                                                            PdfPage page,
+                                                           bool skipImage,
                                                            ILogger logger,
                                                            IDataBlockMergeStrategy[] mergeStrategies,
                                                            CancellationToken token,
@@ -269,7 +272,8 @@ namespace PDF.Data.Extractor
                                                             this.ImageManager,
                                                             token,
                                                             logger,
-                                                            page);
+                                                            page,
+                                                            skipImage);
 
                 var processor = new PdfCanvasProcessor(strategy);
                 processor.ProcessPageContent(page);

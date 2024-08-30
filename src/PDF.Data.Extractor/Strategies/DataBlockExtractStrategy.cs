@@ -11,17 +11,13 @@
 
     using Microsoft.Extensions.Logging;
 
-    using Org.BouncyCastle.Asn1.Crmf;
-
     using PDF.Data.Extractor.Extensions;
-    using PDF.Data.Extractor.InternalModels;
     using PDF.Data.Extractor.Services;
 
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
-    using System.Text;
 
     using Vector = iText.Kernel.Geom.Vector;
 
@@ -38,9 +34,9 @@
         private readonly CancellationToken _token;
         private readonly IReadOnlyDictionary<Type, Action<IEventData>> _dataTypeProcessor;
         private readonly Rectangle _pageSize;
-        private readonly PdfPage _page;
-
+        private readonly bool _skipImage;
         private readonly ILogger _logger;
+        private readonly PdfPage _page;
 
         private static readonly ICollection<EventType> s_eventTypeManaged;
 
@@ -73,8 +69,10 @@
                                         IImageManager imageManager,
                                         CancellationToken token,
                                         ILogger logger,
-                                        PdfPage page)
+                                        PdfPage page,
+                                        bool skipImage)
         {
+            this._skipImage = skipImage;
             this._logger = logger;
             this._token = token;
             this._pageSize = page.GetPageSize();
@@ -349,6 +347,9 @@
         /// </summary>
         private void DataImageBlockExtraction(ImageRenderInfo imgRenderInfo)
         {
+            if (this._skipImage)
+                return;
+
             var tags = imgRenderInfo.GetCanvasTagHierarchy();
             var imgName = imgRenderInfo.GetImageResourceName();
             var matrix = imgRenderInfo.GetImageCtm();

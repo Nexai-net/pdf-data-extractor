@@ -44,7 +44,7 @@ namespace PDF.Data.Extractor.Console
 
                 outputTimer.Start();
 
-                if (!cmd.IncludeImages)
+                if (!cmd.IncludeImages && !cmd.SkipExtractImages)
                 {
                     var imageFolder = Path.Combine(finalDir.LocalPath, "Images");
                     if (!Directory.Exists(imageFolder))
