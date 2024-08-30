@@ -2,7 +2,11 @@
   "profiles": {
     "PDF.Data.Extractor.Console": {
       "commandName": "Project",
-      "commandLineArgs": "-o \"c:\\tmp\\pdf-extraction\" -s \"C:\\Users\\Mickaelthumerel\\Downloads\\Microsoft - C# threading.pdf\" -d .result -t "
+      "commandLineArgs": "-o \"c:\\tmp\\pdf-extraction\" --sourceDir \"C:\\Users\\Mickaelthumerel\\source\\repos\\github\\pdf-data-extractor\\data\" -d .result -t --SkipExtractImages"
+    },
+    "OutputSidePdf": {
+      "commandName": "Project",
+      "commandLineArgs": "--sourceDir \"C:\\Users\\Mickaelthumerel\\Documents\\Onthology\\CNES PDF documents\" -r -t --SkipExtractImages --OutputSideFiles"
     }
   }
 }

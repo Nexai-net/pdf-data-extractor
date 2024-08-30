@@ -20,13 +20,24 @@ namespace PDF.Data.Extractor.Console
 
     public static class DocumentExtractorHelper
     {
+        /// <summary>
+        /// Extracts the document information asynchronous.
+        /// </summary>
+        /// <param name="file">The file.</param>
+        /// <param name="cmd">The command.</param>
+        /// <param name="option">The option.</param>
+        /// <param name="finalDir">The final dir. IF null the output will be setup side to the input</param>
+        /// <param name="index">The index.</param>
+        /// <param name="consoleLoggerFactory">The console logger factory.</param>
         public static async Task<DocumentExtractorKPI> ExtractDocumentInformationAsync(string file,
                                                                                        ExtractCommandLineArgument cmd,
                                                                                        PDFExtractorOptions option,
-                                                                                       Uri finalDir,
+                                                                                       Uri? finalDir,
                                                                                        int index,
                                                                                        ILoggerFactory consoleLoggerFactory)
         {
+            bool outputSideToInput = finalDir is null;
+            finalDir ??= new Uri(Path.GetDirectoryName(file)!);
 
             using (var tokenSourceTimeout = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
             using (var docBlockExtractor = new PDFExtractor(consoleLoggerFactory))
@@ -44,7 +55,7 @@ namespace PDF.Data.Extractor.Console
 
                 outputTimer.Start();
 
-                if (!cmd.IncludeImages)
+                if (!cmd.IncludeImages && !cmd.SkipExtractImages)
                 {
                     var imageFolder = Path.Combine(finalDir.LocalPath, "Images");
                     if (!Directory.Exists(imageFolder))
@@ -92,7 +103,7 @@ namespace PDF.Data.Extractor.Console
 
                 tokenSourceTimeout.Token.ThrowIfCancellationRequested();
 
-                await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename + ".json"), json, tokenSourceTimeout.Token);
+                await File.WriteAllTextAsync(Path.Combine(finalDir.LocalPath, outputFilename + ".extract.json"), json, tokenSourceTimeout.Token);
 
                 outputTimer.Stop();
 
